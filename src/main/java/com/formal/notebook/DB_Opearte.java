@@ -1,38 +1,36 @@
 package com.formal.notebook;
 
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.Properties;
 
 public class DB_Opearte
 {
     // 1. 数据库连接字符串（URL）
-    private static final String URL = "jdbc:mysql://localhost:3306/notebook_db?useSSL=false&serverTimezone=UTC";
-
+    private static String URL;
     // 2. 你的本地 MySQL 用户名，默认一般是 root
-    private static final String USER = "root";
+    private static String USER;
 
     // 数据库密码
-    private static final String PASSWORD = "Xmy12345678Abcd";
+    private static String PASSWORD;
 
-    //增加笔记本
-    public static void create_new_notebook(String notebook_name) throws SQLException{
-        String sql = "INSERT INTO notebook (name) VALUES (?)";
+    // 静态代码块，在类加载时执行，加载配置文件
+    static {
+        Properties props = new Properties();
+        try{
+            props.load(new FileInputStream("db.properties"));
 
-        try(Connection conn = DriverManager.getConnection(URL,USER,PASSWORD)){
-            try (PreparedStatement stmt = conn.prepareStatement(sql)){
-                // 3. 设置参数并执行 SQL 语句
-                stmt.setString(1,notebook_name);
-                stmt.executeUpdate();
-            }catch(SQLException e){
-                System.err.println("❌ 数据库操作失败，原因如下：");
-                e.printStackTrace(); // 打印具体的错误报错信息
-                throw e;
-            }
-        } catch (SQLException e) {
-            System.err.println("❌ 数据库连接失败，原因如下：");
-            throw e; // 打印具体的错误报错信息
+            URL = props.getProperty("DB_URL");
+            USER = props.getProperty("DB_USER");
+            PASSWORD = props.getProperty("DB_PASSWORD");
+
+        }catch(IOException e){
+            System.err.println("❌ 配置文件加载失败，请检查 db.properties 文件是否存在！");
+            e.printStackTrace();
         }
     }
 
