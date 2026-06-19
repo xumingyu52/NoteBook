@@ -37,4 +37,8 @@ build/
 
 ### Mac OS ###
 .DS_Store
+<<<<<<< HEAD
 src/main/java/com/formal/notebook/db.properties
+=======
+/src/main/java/com/formal/notebook/db.properties
+>>>>>>> develop
