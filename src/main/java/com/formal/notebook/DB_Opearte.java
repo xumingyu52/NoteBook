@@ -1,5 +1,7 @@
 package com.formal.notebook;
 
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -7,17 +9,32 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
 
 public class DB_Opearte
 {
     // 1. 数据库连接字符串（URL）
-    private static final String URL = "jdbc:mysql://localhost:3306/notebook_db?useSSL=false&serverTimezone=UTC";
-
+    private static String URL;
     // 2. 你的本地 MySQL 用户名，默认一般是 root
-    private static final String USER = "root";
+    private static String USER;
 
     // 数据库密码
-    private static final String PASSWORD = "Xmy12345678Abcd";
+    private static String PASSWORD;
+
+    static {
+        Properties props = new Properties();
+        try{
+            props.load(new FileInputStream("db.properties"));
+
+            URL = props.getProperty("DB_URL");
+            USER = props.getProperty("DB_USER");
+            PASSWORD = props.getProperty("DB_PASSWORD");
+
+        }catch(IOException e){
+            System.err.println("❌ 配置文件加载失败，请检查 db.properties 文件是否存在！");
+            e.printStackTrace();
+        }
+    }
 
     //增加笔记本
     public static void create_new_notebook(String notebook_name) throws SQLException{
