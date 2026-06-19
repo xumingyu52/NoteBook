@@ -3,7 +3,10 @@ package com.formal.notebook;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class DB_Opearte
 {
@@ -68,5 +71,51 @@ public class DB_Opearte
         }
     }
 
-    
+    //修改笔记本名
+    public static void update_notebook_name(int notebook_id, String new_name) throws SQLException{
+        String update_sql = "UPDATE notebook SET name = ? WHERE id = ?;";
+        try(Connection conn = DriverManager.getConnection(URL,USER,PASSWORD)){
+            try (PreparedStatement stmt = conn.prepareStatement(update_sql)){
+                stmt.setString(1,new_name);
+                stmt.setInt(2,notebook_id);
+                stmt.executeUpdate();
+                System.out.println("笔记本名已成功更新！");
+            }
+            catch(SQLException e){
+                System.err.println("❌ 数据库修改失败，原因如下：");
+                e.printStackTrace(); // 打印具体的错误报错信息
+                throw e;
+            }
+        }catch(SQLException e){
+            System.err.println("❌ 数据库连接失败，原因如下：");
+            throw e; // 打印具体的错误报错信息
+        }
+    }
+
+    //查询所有笔记本
+    public static List<Notebook> query_all_notebooks() throws SQLException{
+        List<Notebook> notebooks = new ArrayList<>();
+        String query_sql = "SELECT id, name FROM notebook;";
+
+        try(Connection conn = DriverManager.getConnection(URL,USER,PASSWORD)){
+            try (PreparedStatement stmt = conn.prepareStatement(query_sql)){
+                ResultSet rt = stmt.executeQuery();
+                while(rt.next()){
+                    int id = rt.getInt("id");
+                    String name = rt.getString("name");
+                    notebooks.add(new Notebook(id, name));
+                }
+                return notebooks;
+            }catch(SQLException e){
+                System.err.println("❌ 数据库查询失败，原因如下：");
+                e.printStackTrace(); // 打印具体的错误报错信息
+                throw e;
+            }
+        }catch(SQLException e){
+                System.err.println("❌ 数据库连接失败，原因如下：");
+                e.printStackTrace(); // 打印具体的错误报错信息
+                throw e;
+        }
+    }
 }
+
