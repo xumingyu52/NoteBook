@@ -26,9 +26,9 @@ public class DB_Opearte
         try{
             props.load(new FileInputStream("db.properties"));
 
-            URL = props.getProperty("DB_URL");
-            USER = props.getProperty("DB_USER");
-            PASSWORD = props.getProperty("DB_PASSWORD");
+            URL = props.getProperty("db.url");
+            USER = props.getProperty("db.user");
+            PASSWORD = props.getProperty("db.password");
 
         }catch(IOException e){
             System.err.println("❌ 配置文件加载失败，请检查 db.properties 文件是否存在！");
