@@ -36,6 +36,10 @@ public class DB_Opearte
         }
     }
 
+    //----------------------------------------------------------------------------------//
+    //----------------------------------------------------------------------------------//
+    //笔记本操作函数区
+
     //增加笔记本
     public static void create_new_notebook(String notebook_name) throws SQLException{
         String sql = "INSERT INTO notebook (name) VALUES (?)";
@@ -116,11 +120,12 @@ public class DB_Opearte
 
         try(Connection conn = DriverManager.getConnection(URL,USER,PASSWORD)){
             try (PreparedStatement stmt = conn.prepareStatement(query_sql)){
-                ResultSet rt = stmt.executeQuery();
-                while(rt.next()){
-                    int id = rt.getInt("id");
-                    String name = rt.getString("name");
-                    notebooks.add(new Notebook(id, name));
+                try (ResultSet rt = stmt.executeQuery()){
+                    while(rt.next()){
+                        int id = rt.getInt("id");
+                        String name = rt.getString("name");
+                        notebooks.add(new Notebook(id, name));
+                    }
                 }
                 return notebooks;
             }catch(SQLException e){
@@ -132,6 +137,148 @@ public class DB_Opearte
                 System.err.println("❌ 数据库连接失败，原因如下：");
                 e.printStackTrace(); // 打印具体的错误报错信息
                 throw e;
+        }
+    }
+
+    //----------------------------------------------------------------------------------//
+    //----------------------------------------------------------------------------------//
+    //笔记内容操作函数区
+
+    /**
+     * 在指定笔记本下新建标题数据
+     * title不允许有重复
+     */
+    public static void create_new_title(int notebook_id, String title) throws SQLException{
+        String sql = "INSERT INTO Title_and_Content (notebook_id, title, content) VALUES (?, ?, ?);";
+
+        // 先检查标题是否已存在
+        if (is_title_exists(notebook_id, title)) {
+            System.err.println("❌ 标题已存在，无法重复添加！");
+            return; // 直接返回，不执行插入操作
+        }
+
+        try(Connection conn = DriverManager.getConnection(URL,USER,PASSWORD)){
+            try (PreparedStatement stmt = conn.prepareStatement(sql)){
+                stmt.setInt(1,notebook_id);
+                stmt.setString(2,title);
+                //空字符串置入
+                stmt.setString(3,"");
+                stmt.executeUpdate();
+                System.out.println("标题已成功添加！");
+            }
+            catch(SQLException e){
+                System.err.println("❌ 数据库操作失败，原因如下：");
+                e.printStackTrace(); // 打印具体的错误报错信息
+                throw e;
+            }
+        } catch (SQLException e) {
+            System.err.println("❌ 数据库连接失败，原因如下：");
+            throw e; // 打印具体的错误报错信息
+        }
+    }
+
+    //在指定笔记本指定标题下修改内容
+    public static void update_content(int notebook_id, String title, String content) throws SQLException{
+        String sql = "UPDATE Title_and_Content SET content = ? WHERE notebook_id = ? AND title = ?;";
+
+        try(Connection conn = DriverManager.getConnection(URL,USER,PASSWORD)){
+            try (PreparedStatement stmt = conn.prepareStatement(sql)){
+                stmt.setString(1, content);
+                stmt.setInt(2, notebook_id);
+                stmt.setString(3, title);
+                stmt.executeUpdate();
+                //由于改函数后期会被用来自动保存，不再在终端输出提示信息
+                //System.out.println("内容已成功更新！");
+            }
+            catch(SQLException e){
+                System.err.println("❌ 数据库操作失败，原因如下：");
+                e.printStackTrace(); // 打印具体的错误报错信息
+                throw e;
+            }
+        } catch (SQLException e) {
+            System.err.println("❌ 数据库连接失败，原因如下：");
+            throw e; // 打印具体的错误报错信息
+        }
+    }
+
+    //查询指定笔记本指定标题与内容
+    public static Title_and_Content query_title_and_content(int notebook_id, String title) throws SQLException{
+        String query_sql = "SELECT notebook_id, title, content FROM Title_and_Content WHERE notebook_id = ? AND title = ?;";
+
+        try(Connection conn = DriverManager.getConnection(URL,USER,PASSWORD)){
+            try (PreparedStatement stmt = conn.prepareStatement(query_sql)){
+                stmt.setInt(1,notebook_id);
+                stmt.setString(2,title);
+                try (ResultSet rt = stmt.executeQuery()){
+                    if(rt.next()){
+                        return new Title_and_Content(rt.getInt("notebook_id"), rt.getString("title"), rt.getString("content"));
+                    }
+                }
+                return null;
+            }catch(SQLException e){
+                System.err.println("❌ 数据库查询失败，原因如下：");
+                e.printStackTrace(); // 打印具体的错误报错信息
+                throw e;
+            }
+        } catch (SQLException e) {
+            System.err.println("❌ 数据库连接失败，原因如下：");
+            throw e; // 打印具体的错误报错信息
+        }
+
+    }
+    /**
+     * 删除指定笔记本指定标题与内容
+     */
+    public static void delete_title(int notebook_id, String title) throws SQLException{
+        String sql = "DELETE FROM Title_and_Content WHERE notebook_id = ? AND title = ?;";
+        if (!is_title_exists(notebook_id, title)) {
+                System.err.println("❌ 标题不存在，无法删除！");
+                return; // 直接返回，不执行删除操作
+            }
+        try(Connection conn = DriverManager.getConnection(URL,USER,PASSWORD)){
+            conn.setAutoCommit(false); // 开启事务
+
+            try (PreparedStatement stmt = conn.prepareStatement(sql)){
+                
+                stmt.setInt(1,notebook_id);
+                stmt.setString(2,title);
+                stmt.executeUpdate();
+                conn.commit(); // 提交事务
+                System.out.println("标题已成功删除！");
+            }
+            catch(SQLException e){
+                System.err.println("❌ 数据库操作失败，原因如下：");
+                conn.rollback(); // 回滚事务
+                e.printStackTrace(); // 打印具体的错误报错信息
+                throw e;
+            }
+        } catch (SQLException e) {
+            System.err.println("❌ 数据库连接失败，原因如下：");
+            throw e; // 打印具体的错误报错信息
+        }
+    }
+    
+
+    /**
+     * 标题查重
+     */
+    public static boolean is_title_exists(int notebook_id, String title) throws SQLException {
+        String sql = "SELECT 1 FROM Title_and_Content WHERE notebook_id = ? AND title = ? LIMIT 1;";
+        
+        try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            
+            stmt.setInt(1, notebook_id);
+            stmt.setString(2, title);
+            
+            try (ResultSet rs = stmt.executeQuery()) {
+                // 💡 rs.next() 如果为 true，说明查到了至少一条记录，代表重名了！
+                return rs.next(); 
+            }
+        } catch (SQLException e) {
+            System.err.println("❌ 查重校验失败！");
+            e.printStackTrace();
+            throw e;
         }
     }
 }
