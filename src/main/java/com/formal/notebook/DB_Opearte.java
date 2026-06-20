@@ -259,6 +259,35 @@ public class DB_Opearte
         }
     }
 
+    /**
+     * 修改指定笔记本下的指定笔记标题
+     * @param notebook_id 笔记本id
+     * @param old_title 旧标题
+     * @param new_title 新标题
+     * @throws SQLException
+     */
+    public static void update_title(int notebook_id, String old_title, String new_title) throws SQLException{
+        String sql = "UPDATE Title_and_Content SET title = ? WHERE notebook_id = ? AND title = ?;";
+
+        try(Connection conn = DriverManager.getConnection(URL,USER,PASSWORD)){
+            try (PreparedStatement stmt = conn.prepareStatement(sql)){
+                stmt.setString(1, new_title);
+                stmt.setInt(2, notebook_id);
+                stmt.setString(3, old_title);
+                stmt.executeUpdate();
+                //由于改函数后期会被用来自动保存，不再在终端输出提示信息
+                //System.out.println("标题已成功更新！");
+            }
+            catch(SQLException e){
+                System.err.println("❌ 数据库操作失败，原因如下：");
+                e.printStackTrace(); // 打印具体的错误报错信息
+                throw e;
+            }
+        } catch (SQLException e) {
+            System.err.println("❌ 数据库连接失败，原因如下：");
+            throw e; // 打印具体的错误报错信息
+        }
+    }
     //查询指定笔记本指定标题与内容
     public static Title_and_Content query_title_and_content(int notebook_id, String title) throws SQLException{
         String query_sql = "SELECT notebook_id, title, content FROM Title_and_Content WHERE notebook_id = ? AND title = ?;";
