@@ -56,6 +56,7 @@ public class DB_Opearte
             }
         } catch (SQLException e) {
             System.err.println("❌ 数据库连接失败，原因如下：");
+            e.printStackTrace();
             throw e; // 打印具体的错误报错信息
         }
     }
@@ -87,6 +88,7 @@ public class DB_Opearte
 
             } catch (SQLException e) {
                 conn.rollback(); // 一步失败，全部回滚
+                e.printStackTrace(); // 打印具体的错误报错信息
                 throw e;
             }
         }
@@ -138,6 +140,62 @@ public class DB_Opearte
                 e.printStackTrace(); // 打印具体的错误报错信息
                 throw e;
         }
+    }
+
+    /**
+     * 返回笔记本id
+     * @param notebook_name
+     * @throws SQLException
+     */
+    public static int get_notebook_id(String notebook_name) throws SQLException{
+        String query_sql = "SELECT id FROM notebook WHERE name = ?;";
+        int notebook_id = 0;
+        try(Connection conn = DriverManager.getConnection(URL,USER,PASSWORD)){
+            try (PreparedStatement stmt = conn.prepareStatement(query_sql)){
+                stmt.setString(1,notebook_name);
+                try (ResultSet rt = stmt.executeQuery()){
+                    if(rt.next()){
+                        notebook_id = rt.getInt("id");
+                    }
+                }
+            }catch(SQLException e){
+                System.err.println("❌ 数据库查询失败，原因如下：");
+                e.printStackTrace(); // 打印具体的错误报错信息
+                throw e;
+            }
+        } catch (SQLException e) {
+            System.err.println("❌ 数据库连接失败，原因如下：");
+            throw e; // 打印具体的错误报错信息
+        }
+        return notebook_id;
+    }
+
+    /**
+     * 检查笔记本名称是否存在
+     * @param notebook_name
+     * @throws SQLException
+     */
+    public static boolean is_notebook_name_exists(String notebook_name) throws SQLException{
+        String query_sql = "SELECT name FROM notebook WHERE name = ?;";
+        boolean exists = false;
+        try(Connection conn = DriverManager.getConnection(URL,USER,PASSWORD)){
+            try (PreparedStatement stmt = conn.prepareStatement(query_sql)){
+                stmt.setString(1,notebook_name);
+                try (ResultSet rt = stmt.executeQuery()){
+                    if(rt.next()){
+                        exists = true;
+                    }
+                }
+            }catch(SQLException e){
+                System.err.println("❌ 数据库查询失败，原因如下：");
+                e.printStackTrace(); // 打印具体的错误报错信息
+                throw e;
+            }
+        } catch (SQLException e) {
+            System.err.println("❌ 数据库连接失败，原因如下：");
+            throw e; // 打印具体的错误报错信息
+        }
+        return exists;
     }
 
     //----------------------------------------------------------------------------------//
@@ -236,7 +294,6 @@ public class DB_Opearte
                 return; // 直接返回，不执行删除操作
             }
         try(Connection conn = DriverManager.getConnection(URL,USER,PASSWORD)){
-            conn.setAutoCommit(false); // 开启事务
 
             try (PreparedStatement stmt = conn.prepareStatement(sql)){
                 
@@ -248,7 +305,6 @@ public class DB_Opearte
             }
             catch(SQLException e){
                 System.err.println("❌ 数据库操作失败，原因如下：");
-                conn.rollback(); // 回滚事务
                 e.printStackTrace(); // 打印具体的错误报错信息
                 throw e;
             }
