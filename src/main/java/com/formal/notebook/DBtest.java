@@ -1,6 +1,6 @@
 package com.formal.notebook;
 
-import java.util.List;
+import java.util.ArrayList;
 
 public class DBtest {
 
@@ -17,7 +17,7 @@ public class DBtest {
 
             // 2. 查询笔记本列表
             System.out.println("\n=== 查询所有笔记本 ===");
-            List<Notebook> notebooks = DB_Opearte.query_all_notebooks();
+            ArrayList<Notebook> notebooks = DB_Opearte.query_all_notebooks();
             for (Notebook nb : notebooks) {
                 System.out.println("笔记本ID: " + nb.getId() + ", 名称: " + nb.getName());
             }
@@ -68,7 +68,7 @@ public class DBtest {
             System.out.println("\n=== 清理测试数据 ===");
             try {
                 // 需要先获取笔记本ID
-                List<Notebook> notebooks = DB_Opearte.query_all_notebooks();
+                ArrayList<Notebook> notebooks = DB_Opearte.query_all_notebooks();
                 for (Notebook nb : notebooks) {
                     if (nb.getName().equals(testNotebookName)) {
                         DB_Opearte.delete_title(nb.getId(), testTitle);

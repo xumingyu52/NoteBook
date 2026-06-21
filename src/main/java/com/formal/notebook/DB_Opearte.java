@@ -8,7 +8,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Properties;
 
 public class DB_Opearte
@@ -116,13 +115,17 @@ public class DB_Opearte
     }
 
     //查询所有笔记本
-    public static List<Notebook> query_all_notebooks() throws SQLException{
-        List<Notebook> notebooks = new ArrayList<>();
+    public static ArrayList<Notebook> query_all_notebooks() throws SQLException{
+        ArrayList<Notebook> notebooks = new ArrayList<>();
         String query_sql = "SELECT id, name FROM notebook;";
 
         try(Connection conn = DriverManager.getConnection(URL,USER,PASSWORD)){
             try (PreparedStatement stmt = conn.prepareStatement(query_sql)){
                 try (ResultSet rt = stmt.executeQuery()){
+                    if (!rt.isBeforeFirst()) {
+                        System.out.println("查询结果为空");
+                        return notebooks; // 返回空列表
+                    }
                     while(rt.next()){
                         int id = rt.getInt("id");
                         String name = rt.getString("name");
@@ -201,8 +204,16 @@ public class DB_Opearte
     //----------------------------------------------------------------------------------//
     //----------------------------------------------------------------------------------//
     //笔记内容操作函数区
-
     /**
+     * 查询该笔记本下的所有标题
+     * @param notebook_id
+     * @throws SQLException
+    */
+    
+    /**
+     * @param notebook_id
+     * @param title
+     * @throws SQLException
      * 在指定笔记本下新建标题数据
      * title不允许有重复
      */

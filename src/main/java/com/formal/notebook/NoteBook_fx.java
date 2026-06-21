@@ -1,6 +1,8 @@
 package com.formal.notebook;
 
 import java.io.InputStream;
+import java.sql.SQLException;
+import java.util.ArrayList;
 
 import javafx.application.Application;
 import javafx.geometry.Insets;
@@ -38,6 +40,7 @@ public class NoteBook_fx extends Application{
          * 1.当无任何笔记本时，加载引导界面创建新笔记本
          * 2.创建笔记本会打开一个新窗口用于输入笔记本名字
          * 3.创建好笔记本后，为splitpane，左侧栏有gridpane，顶上有笔记本选择，中间是笔记标题，最下面有操作栏，有新建笔记本，新建笔记，右侧栏为笔记内容
+         * 4.数据库错误窗口，用于显示数据库错误信息，包括错误类型，错误信息，错误位置
          */
 
         //-----------------------------------------------------------------//
@@ -63,6 +66,7 @@ public class NoteBook_fx extends Application{
 
         Scene guide_scene = new Scene(guide_scene_root, 800, 500);
 
+        //-----------------------------------------------------------------//
         //第二界面用于新的stage，创建笔记本
         // 第二界面用于新的stage，创建笔记本
         GridPane new_notebook_scene_root = new GridPane();
@@ -110,6 +114,45 @@ public class NoteBook_fx extends Application{
 
         // 🌟 5. 稍微宽裕一点的舞台尺寸，让布局展开
         Scene new_notebook_scene = new Scene(new_notebook_scene_root, 420, 160); 
+
+        //-----------------------------------------------------------------//
+        //第四界面：异常界面
+        GridPane error_scene_root = new GridPane();
+
+        // 让整个内容距离窗口边缘有 20 像素的“呼吸空间”
+        error_scene_root.setPadding(new Insets(20));
+        // 让左边图标和右边表单之间横向隔开 20 像素
+        error_scene_root.setHgap(25); 
+        error_scene_root.setAlignment(Pos.CENTER_LEFT); // 靠左居中对齐
+
+        InputStream error_icon = getClass().getResourceAsStream("/icons/错误_error.png");
+        if (error_icon != null) {
+            ImageView error_icon_view = new ImageView(new Image(error_icon));
+            error_icon_view.setFitWidth(80);  // 🌟 稍微缩小一点，更精致
+            error_icon_view.setFitHeight(80);
+            error_scene_root.add(error_icon_view, 0, 0);
+        }
+
+        VBox error_label_box = new VBox();
+        // 控制右侧内部的整体垂直间距
+        error_label_box.setSpacing(10); 
+
+        Label error_label = new Label("程序异常！");
+        error_label.setStyle("-fx-font-weight: bold; -fx-font-size: 20px;"); // 用CSS改字号更方便
+
+        Label error_tip_label = new Label("请确认数据库存在且启动mysql服务，如果为在线服务，请确认网路连接。");
+        error_tip_label.setStyle("-fx-font-size: 11px; -fx-text-fill: #7f8c8d;"); // 把提示文字改成高级灰，突出重点
+        error_tip_label.setWrapText(true);
+        //*请记得绑定这个label的文字属性到异常信息
+        Label error_stackTrace = new Label("");
+
+        // 按顺序塞入右侧
+        error_label_box.getChildren().addAll(error_label, error_tip_label, error_stackTrace);
+
+        error_scene_root.add(error_label_box, 1, 0);
+
+        // 🌟 5. 稍微宽裕一点的舞台尺寸，让布局展开
+        Scene error_scene = new Scene(error_scene_root, 420, 160); 
         
         //-------------------------------------------------------------------//
         //stage配置区
@@ -117,7 +160,7 @@ public class NoteBook_fx extends Application{
         primaryStage.setScene(guide_scene);
         primaryStage.setMinWidth(800);
         primaryStage.setMinHeight(500);
-        primaryStage.show();
+        //primaryStage.show();
 
         Stage new_notebook_stage = new Stage();
         new_notebook_stage.setTitle("新建笔记本");
@@ -125,7 +168,92 @@ public class NoteBook_fx extends Application{
         new_notebook_stage.setResizable(false);
         new_notebook_stage.initOwner(primaryStage);
         new_notebook_stage.initModality(Modality.WINDOW_MODAL);
-        new_notebook_stage.show();
+        new_notebook_stage.setOnCloseRequest(event -> {
+            notebook_name_field.clear();
+        });
+        //new_notebook_stage.show();
+        
+        //new_notebook_stage.show();
+
+        Stage error_stage = new Stage();
+        error_stage.setTitle("程序异常");
+        error_stage.setScene(error_scene);
+        error_stage.setResizable(false);
+        error_stage.initOwner(primaryStage);
+        error_stage.initModality(Modality.WINDOW_MODAL);
+        //error_stage.show();   
+
+        //-----------------------------------------------------------//
+        //事件，判断，监听，事件处理
+        //-----------------------------------------------------------//
+        
+        //首次启动判断是否有笔记本
+        try{
+            ArrayList<Notebook> notebook_list = new ArrayList<>();
+            notebook_list = DB_Opearte.query_all_notebooks();
+            if(notebook_list.isEmpty()){
+                primaryStage.show();
+            }//后续加上笔记本主界面
+        }catch(SQLException e){
+            error_stackTrace.setText(e.getMessage());
+            error_stage.show();
+            e.printStackTrace();
+        }
+        create_notebook_button.setOnAction(event -> {
+            new_notebook_stage.show();
+        });
+
+        //新建笔记本的判断逻辑
+        //输入框实时监听是否笔记本名重复
+        //设置提示label
+        Label warning_label_1 = new Label("笔记本名最多50个字符");
+        warning_label_1.setStyle("-fx-font-size: 11px; -fx-text-fill: #ff4d4f;"); // 把提示文字改成红色
+        warning_label_1.setWrapText(true);
+        label_and_textarea.getChildren().add(3, warning_label_1);
+        warning_label_1.setManaged(false);
+
+        Label warning_label_2 = new Label("笔记本名已存在");
+        warning_label_2.setStyle("-fx-font-size: 11px; -fx-text-fill: #ff4d4f;"); // 把提示文字改成红色
+        warning_label_2.setWrapText(true);
+        label_and_textarea.getChildren().add(4, warning_label_2);
+        warning_label_2.setManaged(false);
+
+        notebook_name_field.textProperty().addListener((observable, oldValue, newValue) -> {
+            //限制字数逻辑
+            int max_length = 50;
+            //如果输入的字符数超过最大长度且不为空字符串
+            if(newValue.length() > max_length && !newValue.isEmpty()){
+                String truncated_name = newValue.substring(0, max_length);
+                int postition = notebook_name_field.getCaretPosition();
+                notebook_name_field.setText(truncated_name);
+                notebook_name_field.positionCaret(Math.min(postition, max_length));
+                //显示警告标签
+                warning_label_1.setVisible(true);
+                warning_label_1.setManaged(true);
+            }else{
+                //隐藏警告标签
+                warning_label_1.setVisible(false);
+                warning_label_1.setManaged(false);
+            }
+
+            //判断是否重复
+            try{
+                boolean is_exists = DB_Opearte.is_notebook_name_exists(newValue);
+                if(is_exists){
+                    warning_label_2.setVisible(true);
+                    warning_label_2.setManaged(true);
+                }else{
+                    warning_label_2.setVisible(false);
+                    warning_label_2.setManaged(false);
+                }
+            }catch(SQLException e){
+                error_stackTrace.setText(e.getMessage());
+                error_stage.show();
+                e.printStackTrace();
+            }
+        });
+
+
 
     }
 
