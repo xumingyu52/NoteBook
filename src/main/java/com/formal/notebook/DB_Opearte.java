@@ -391,7 +391,6 @@ public class DB_Opearte
                 stmt.setInt(1,notebook_id);
                 stmt.setString(2,title);
                 stmt.executeUpdate();
-                conn.commit(); // 提交事务
                 System.out.println("标题已成功删除！");
             }
             catch(SQLException e){

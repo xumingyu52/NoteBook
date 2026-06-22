@@ -102,7 +102,7 @@ public class NoteBook_fx extends Application{
         Stage error_stage = new Stage();
         error_stage.setTitle("程序异常");
         error_stage.setScene(error_scene);
-        error_stage.setResizable(false);
+        //error_stage.setResizable(false);
         error_stage.initOwner(primaryStage);
         error_stage.initModality(Modality.WINDOW_MODAL);
         
@@ -290,6 +290,54 @@ public class NoteBook_fx extends Application{
         Scene main_scene = new Scene(main_splitpane, 900, 600);
         
         //-----------------------------------------------------------------//
+        //第五界面：新建笔记界面
+
+        // 第五界面用于新的stage，创建笔记
+        GridPane new_note_scene_root = new GridPane();
+
+        // 让整个内容距离窗口边缘有 20 像素的“呼吸空间”
+        new_note_scene_root.setPadding(new Insets(20));
+        // 让左边图标和右边表单之间横向隔开 20 像素
+        new_note_scene_root.setHgap(25);
+        new_note_scene_root.setAlignment(Pos.CENTER_LEFT); // 靠左居中对齐
+
+        InputStream new_note_icon = getClass().getResourceAsStream("/icons/笔记本_notebook-one.png");
+        if (new_note_icon != null) {
+            ImageView new_note_icon_view = new ImageView(new Image(new_note_icon));
+            new_note_icon_view.setFitWidth(80);  // 🌟 稍微缩小一点，更精致
+            new_note_icon_view.setFitHeight(80);
+            new_note_scene_root.add(new_note_icon_view, 0, 0);
+        }
+
+        VBox note_label_and_textarea = new VBox();
+        // 控制右侧内部的整体垂直间距
+        note_label_and_textarea.setSpacing(10);
+
+        Label new_note_label = new Label("新建笔记");
+        new_note_label.setStyle("-fx-font-weight: bold; -fx-font-size: 20px;"); // 用CSS改字号更方便
+
+        Label note_tip_label = new Label("请不要输入已有的笔记名！不可超过50个字");
+        note_tip_label.setStyle("-fx-font-size: 11px; -fx-text-fill: #7f8c8d;"); // 把提示文字改成高级灰，突出重点
+
+        // 把大卡、粗鲁的 TextArea 换成优雅的单行 TextField
+        TextField note_name_field = new TextField();
+        note_name_field.setPromptText("请输入笔记名称..."); // 增加灰色占位提示词
+        note_name_field.setPrefWidth(260); // 调整更合适的宽度
+        //确认按钮Hbox右对齐
+        HBox note_confirm_button_hbox = new HBox();
+        note_confirm_button_hbox.setAlignment(Pos.CENTER_RIGHT);
+        Button note_confirm_button = new Button(" 创建 ");
+        note_confirm_button.setStyle("-fx-background-color: #bcf3d3ff; -fx-text-fill: black; -fx-font-weight: bold;"
+                                +"-fx-background-radius: 32px; -fx-border-radius: 32px;");
+        note_confirm_button_hbox.getChildren().add(note_confirm_button);
+
+        // 按顺序塞入右侧
+        note_label_and_textarea.getChildren().addAll(new_note_label, note_tip_label, note_name_field, note_confirm_button_hbox);
+
+        new_note_scene_root.add(note_label_and_textarea, 1, 0);
+
+        // 🌟 5. 稍微宽裕一点的舞台尺寸，让布局展开
+        Scene new_note_scene = new Scene(new_note_scene_root, 420, 160);
 
         //-------------------------------------------------------------------//
         //stage配置区
@@ -310,8 +358,16 @@ public class NoteBook_fx extends Application{
         });
         //new_notebook_stage.show();
         
-        //new_notebook_stage.show();
-
+        //new_note_stage.show();
+        Stage new_note_stage = new Stage();
+        new_note_stage.setTitle("新建笔记");
+        new_note_stage.setScene(new_note_scene);
+        new_note_stage.setResizable(false);
+        new_note_stage.initOwner(primaryStage);
+        new_note_stage.initModality(Modality.WINDOW_MODAL);
+        new_note_stage.setOnCloseRequest(event -> {
+            note_name_field.clear();
+        });
 
         //error_stage.show();   
 
@@ -335,7 +391,7 @@ public class NoteBook_fx extends Application{
                     error_stackTrace.setText(e.getMessage());
                     error_stage.show();
                 }
-                int last_notebook_id = Integer.parseInt(properties.getProperty("last_notebook_id"));
+                this.last_notebook_id = Integer.parseInt(properties.getProperty("last_notebook_id"));
                 //根据上次使用的笔记本ID刷新标题列表
                 refresh_title_list(last_notebook_id, note_list_view);
                 String notebook_name = DB_Opearte.get_notebook_name(last_notebook_id);
@@ -492,6 +548,120 @@ public class NoteBook_fx extends Application{
                 primaryStage.close();
             }
             
+        });
+        //--------------------------------------------------------------//
+        //新建笔记的判断逻辑
+        //输入框实时监听是否笔记名重复
+        //设置提示label
+        Label note_warning_label_1 = new Label("笔记名最多50个字符");
+        note_warning_label_1.setStyle("-fx-font-size: 11px; -fx-text-fill: #ff4d4f;"); // 把提示文字改成红色
+        note_warning_label_1.setWrapText(true);
+        note_label_and_textarea.getChildren().add(3, note_warning_label_1);
+        note_warning_label_1.setManaged(false);
+
+        Label note_warning_label_2 = new Label("笔记名已存在");
+        note_warning_label_2.setStyle("-fx-font-size: 11px; -fx-text-fill: #ff4d4f;"); // 把提示文字改成红色
+        note_warning_label_2.setWrapText(true);
+        note_label_and_textarea.getChildren().add(4, note_warning_label_2);
+        note_warning_label_2.setManaged(false);
+
+        Label note_empty_warnning = new Label("笔记名不能为空");
+        note_empty_warnning.setStyle("-fx-font-size: 11px; -fx-text-fill: #ff4d4f;"); // 把提示文字改成红色
+        note_empty_warnning.setWrapText(true);
+        note_label_and_textarea.getChildren().add(5, note_empty_warnning);
+        note_empty_warnning.setManaged(false);
+
+        new_note_button.setOnAction(event -> {
+            new_note_stage.show();
+        });
+        note_name_field.textProperty().addListener((obs, oldValue, newValue) -> {
+            //限制字数逻辑
+            int max_length = 50;
+            //如果输入的字符数超过最大长度且不为空字符串
+            if(newValue.length() > max_length && !newValue.isEmpty()){
+                String truncated_name = newValue.substring(0, max_length);
+                int postition = note_name_field.getCaretPosition();
+                note_name_field.setText(truncated_name);
+                note_name_field.positionCaret(Math.min(postition, max_length));
+                //显示警告标签
+                note_warning_label_1.setVisible(true);
+                note_warning_label_1.setManaged(true);
+            }else{
+                //隐藏警告标签
+                note_warning_label_1.setVisible(false);
+                note_warning_label_1.setManaged(false);
+            }
+
+            //判断是否重复
+            try{
+                boolean is_exists = DB_Opearte.is_title_exists(last_notebook_id, newValue);
+                if(is_exists){
+                    note_warning_label_2.setVisible(true);
+                    note_warning_label_2.setManaged(true);
+                }else{
+                    note_warning_label_2.setVisible(false);
+                    note_warning_label_2.setManaged(false);
+                }
+            }catch(SQLException e){
+                error_stackTrace.setText(e.getMessage());
+                error_stage.show();
+                e.printStackTrace();
+            }
+        });
+
+        note_confirm_button.setOnAction(event ->{
+            String note_name = note_name_field.getText();
+            //判断是否为空
+            if(note_name.isEmpty()){
+                note_empty_warnning.setVisible(true);
+                note_empty_warnning.setManaged(true);
+                return;
+            }
+            // 检查是否已选择笔记本
+            if (last_notebook_id <= 0) {
+                javafx.scene.control.Alert alert = new javafx.scene.control.Alert(
+                    javafx.scene.control.Alert.AlertType.WARNING,
+                    "请先选择一个笔记本！"
+                );
+                alert.setTitle("提示");
+                alert.setHeaderText(null);
+                alert.showAndWait();
+                return;
+            }
+            //判断是否重复
+            //判断是否重复
+            try{
+                boolean is_exists = DB_Opearte.is_title_exists(last_notebook_id, note_name);
+                if(is_exists){
+                    note_warning_label_2.setVisible(true);
+                    note_warning_label_2.setManaged(true);
+                }else{
+                    note_warning_label_2.setVisible(false);
+                    note_warning_label_2.setManaged(false);
+                }
+            }catch(SQLException e){
+                error_stackTrace.setText(e.getMessage());
+                error_stage.show();
+                e.printStackTrace();
+            }
+            //创建笔记
+            try{
+                DB_Opearte.create_new_title(last_notebook_id, note_name);
+                
+                //刷新笔记列表
+                refresh_title_list(last_notebook_id, note_list_view);
+                
+                // 滚动到新创建的笔记并选中
+                note_list_view.getSelectionModel().select(note_name);
+                note_list_view.scrollTo(note_name);
+                
+                primaryStage.setScene(main_scene);
+                new_notebook_stage.close();
+            }catch(SQLException e){
+                error_stackTrace.setText(e.getMessage());
+                error_stage.show();
+                e.printStackTrace();
+            }
         });
 
     }
