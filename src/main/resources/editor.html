@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="index.css" />
+    <script src="index.min.js"></script>
+    <style> 
+        body, html, #vditor { height: 100%; margin: 0; padding: 0; border: none; } 
+    </style>
+</head>
+<body>
+    <div id="vditor"></div>
+    <script>
+        let vditor;
+        window.onload = () => {
+            vditor = new Vditor('vditor', {
+                mode: 'wysiwyg',
+                value: '{{INITIAL_MARKDOWN}}',
+                cache: { enable: false }, 
+                toolbarConfig: { hide: true },
+                after: () => {
+                    window.javaBridge.onReady();
+                },
+                input: (value) => {
+                    window.javaBridge.updateContent(value);
+                }
+            });
+        };
+        
+        window.setMarkdown = (md) => { vditor.setValue(md); };
+    </script>
+</body>
+</html>

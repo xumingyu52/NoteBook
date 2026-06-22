@@ -12,6 +12,11 @@ module com.formal.notebook {
     requires java.desktop;
     requires javafx.base;
 
+    requires javafx.web; // 加上这一行！
+
+    // 如果用了 JSObject，还要加这一行
+    requires jdk.jsobject;
+
     opens com.formal.notebook to javafx.fxml;
     exports com.formal.notebook;
 }
