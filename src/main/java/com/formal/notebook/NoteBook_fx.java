@@ -506,7 +506,7 @@ public class NoteBook_fx extends Application{
             }
     }
 
-    public void add_notebook_list(MenuButton menuButton, ListView<String> note_list_view) throws SQLException {
+        public void add_notebook_list(MenuButton menuButton, ListView<String> note_list_view) throws SQLException {
         try {
             ArrayList<Notebook> notebooks = DB_Opearte.query_all_notebooks();
             menuButton.getItems().clear();
@@ -522,20 +522,8 @@ public class NoteBook_fx extends Application{
             });
             menuButton.getItems().add(new_notebook_item_refresh);
 
-            // ② 添加每个笔记本条目，并附带右键上下文菜单
+            // ② 用 CustomMenuItem 包裹真实 Label Node，使右键可正常触发
             for (Notebook notebook : notebooks) {
-                MenuItem item = new MenuItem(notebook.getName());
-
-                // 点击切换笔记本
-                item.setOnAction(event -> {
-                    last_notebook_id = notebook.getId();
-                    set_select_notebook_button_text(notebook.getName(), menuButton);
-                    try {
-                        refresh_title_list(last_notebook_id, note_list_view);
-                    } catch (SQLException e) {
-                        e.printStackTrace();
-                    }
-                });
 
                 // 右键上下文菜单：重命名 / 删除
                 ContextMenu notebook_ctx = new ContextMenu();
@@ -560,11 +548,9 @@ public class NoteBook_fx extends Application{
                                 return;
                             }
                             DB_Opearte.update_notebook_name(notebook.getId(), trimmed);
-                            // 如果改的是当前显示的笔记本，同步更新按钮文字
                             if (notebook.getId() == last_notebook_id) {
                                 set_select_notebook_button_text(trimmed, menuButton);
                             }
-                            // 刷新菜单列表（重新加载，让新名字生效）
                             add_notebook_list(menuButton, note_list_view);
                         } catch (SQLException e) {
                             e.printStackTrace();
@@ -576,7 +562,7 @@ public class NoteBook_fx extends Application{
                 ctx_delete.setOnAction(event -> {
                     javafx.scene.control.Alert confirm = new javafx.scene.control.Alert(
                         javafx.scene.control.Alert.AlertType.CONFIRMATION,
-                        "确定要删除笔记本" + notebook.getName() + "及其所有笔记吗？此操作不可撤销。",
+                        "确定要删除笔记本\"" + notebook.getName() + "\"及其所有笔记吗？此操作不可撤销。",
                         javafx.scene.control.ButtonType.YES,
                         javafx.scene.control.ButtonType.NO
                     );
@@ -586,13 +572,11 @@ public class NoteBook_fx extends Application{
                         if (btn != javafx.scene.control.ButtonType.YES) return;
                         try {
                             DB_Opearte.delete_notebook(notebook.getId());
-                            // 若删除的是当前选中的笔记本，切换到其他或清空
                             if (notebook.getId() == last_notebook_id) {
                                 last_notebook_id = -1;
                                 menuButton.setText("选择笔记本");
                                 note_list_view.getItems().clear();
                             }
-                            // 刷新菜单列表
                             add_notebook_list(menuButton, note_list_view);
                             // 检查是否还有笔记本，如果没有则回到引导界面
                             if (menuButton.getItems().size() <= 1) { // 只有"新建笔记本"项
@@ -606,17 +590,37 @@ public class NoteBook_fx extends Application{
 
                 notebook_ctx.getItems().addAll(ctx_rename, ctx_delete);
 
-                // 将右键菜单绑定到 MenuItem 的图形节点（通过 Label 包装实现右键触发）
+                // CustomMenuItem 内包真实 Node，鼠标事件完整可用
                 javafx.scene.control.Label item_label = new javafx.scene.control.Label(notebook.getName());
-                item_label.setPrefWidth(180);
-                item_label.setOnContextMenuRequested(e ->
-                    notebook_ctx.show(item_label, e.getScreenX(), e.getScreenY())
-                );
-                item.setGraphic(item_label);
-                // 清空文字避免重复显示（文字已在 Label 里）
-                item.setText("");
+                item_label.setPrefWidth(200);
+                item_label.setPadding(new Insets(2, 4, 2, 4));
 
-                menuButton.getItems().add(item);
+                // 左键：切换笔记本
+                item_label.setOnMouseClicked(e -> {
+                    if (e.getButton() == javafx.scene.input.MouseButton.PRIMARY) {
+                        last_notebook_id = notebook.getId();
+                        set_select_notebook_button_text(notebook.getName(), menuButton);
+                        menuButton.hide();
+                        try {
+                            refresh_title_list(last_notebook_id, note_list_view);
+                        } catch (SQLException ex) {
+                            ex.printStackTrace();
+                        }
+                    }
+                });
+
+                // 右键：弹出重命名/删除菜单
+                item_label.setOnContextMenuRequested(e -> {
+                    //menuButton.hide();
+                    notebook_ctx.show(item_label, e.getScreenX(), e.getScreenY());
+                    e.consume();
+                });
+
+                javafx.scene.control.CustomMenuItem custom_item =
+                    new javafx.scene.control.CustomMenuItem(item_label, false);
+                custom_item.setHideOnClick(false);
+
+                menuButton.getItems().add(custom_item);
             }
         } catch (Exception e) {
             e.printStackTrace();
