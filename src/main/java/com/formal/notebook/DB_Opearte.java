@@ -282,7 +282,7 @@ public class DB_Opearte
                 stmt.setInt(1,notebook_id);
                 stmt.setString(2,title);
                 //空字符串置入
-                stmt.setString(3,"");
+                stmt.setString(3,"# 请输入标题");
                 stmt.executeUpdate();
                 System.out.println("标题已成功添加！");
             }
