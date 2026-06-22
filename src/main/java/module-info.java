@@ -10,6 +10,7 @@ module com.formal.notebook {
     requires java.sql;
     requires javafx.graphics;
     requires java.desktop;
+    requires javafx.base;
 
     opens com.formal.notebook to javafx.fxml;
     exports com.formal.notebook;

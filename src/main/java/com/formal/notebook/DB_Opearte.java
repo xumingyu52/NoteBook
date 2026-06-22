@@ -122,10 +122,7 @@ public class DB_Opearte
         try(Connection conn = DriverManager.getConnection(URL,USER,PASSWORD)){
             try (PreparedStatement stmt = conn.prepareStatement(query_sql)){
                 try (ResultSet rt = stmt.executeQuery()){
-                    if (!rt.isBeforeFirst()) {
-                        System.out.println("查询结果为空");
-                        return notebooks; // 返回空列表
-                    }
+
                     while(rt.next()){
                         int id = rt.getInt("id");
                         String name = rt.getString("name");
@@ -159,6 +156,7 @@ public class DB_Opearte
                 try (ResultSet rt = stmt.executeQuery()){
                     if(rt.next()){
                         notebook_id = rt.getInt("id");
+                        return notebook_id;
                     }
                 }
             }catch(SQLException e){
@@ -201,6 +199,36 @@ public class DB_Opearte
         return exists;
     }
 
+    /**
+     * 返回笔记本名称
+     * @param notebook_id
+     * @return
+     * @throws SQLException
+     */
+    public static String get_notebook_name(int notebook_id) throws SQLException{
+        String query_sql = "SELECT name FROM notebook WHERE id = ?;";
+        String notebook_name = "";
+        try(Connection conn = DriverManager.getConnection(URL,USER,PASSWORD)){
+            try (PreparedStatement stmt = conn.prepareStatement(query_sql)){
+                stmt.setInt(1,notebook_id);
+                try (ResultSet rt = stmt.executeQuery()){
+                    if(rt.next()){
+                        notebook_name = rt.getString("name");
+                        return notebook_name;
+                    }
+                }
+            }catch(SQLException e){
+                System.err.println("❌ 数据库查询失败，原因如下：");
+                e.printStackTrace(); // 打印具体的错误报错信息
+                throw e;
+            }
+        } catch (SQLException e) {
+            System.err.println("❌ 数据库连接失败，原因如下：");
+            throw e; // 打印具体的错误报错信息
+        }
+        return notebook_name;
+    }
+
     //----------------------------------------------------------------------------------//
     //----------------------------------------------------------------------------------//
     //笔记内容操作函数区
@@ -209,6 +237,29 @@ public class DB_Opearte
      * @param notebook_id
      * @throws SQLException
     */
+   public static ArrayList<String> query_all_titles(int notebook_id) throws SQLException{
+        ArrayList<String> titles = new ArrayList<>();
+        String query_sql = "SELECT title FROM Title_and_Content WHERE notebook_id = ?;";
+        try(Connection conn = DriverManager.getConnection(URL,USER,PASSWORD)){
+            try (PreparedStatement stmt = conn.prepareStatement(query_sql)){
+                stmt.setInt(1,notebook_id);
+                try (ResultSet rt = stmt.executeQuery()){
+                    while(rt.next()){
+                        titles.add(rt.getString("title"));
+                    }
+                }
+            }catch(SQLException e){
+                System.err.println("❌ 数据库查询失败，原因如下：");
+                e.printStackTrace();
+                throw e;
+            }
+        } catch (SQLException e) {
+            System.err.println("❌ 数据库连接失败，原因如下：");
+            e.printStackTrace();
+            throw e; // 打印具体的错误报错信息
+        }
+        return titles;
+    }
     
     /**
      * @param notebook_id
