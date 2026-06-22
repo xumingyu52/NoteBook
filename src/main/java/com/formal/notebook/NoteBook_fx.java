@@ -13,16 +13,19 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.MenuButton;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.SplitPane;
 import javafx.scene.control.TextField;
+import javafx.scene.control.TextInputDialog;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import javafx.stage.Modality;
@@ -30,9 +33,12 @@ import javafx.stage.Stage;
 
 public class NoteBook_fx extends Application{
     private int last_notebook_id = -1;
+    private Stage primaryStage;
+    private Scene guide_scene;
 
     @Override
     public void start(Stage primaryStage) throws Exception {
+        this.primaryStage = primaryStage;
         // 应用程序启动时执行的代码
         System.out.println("NoteBook_fx 应用程序启动");
         //设置primaryStage图标
@@ -119,7 +125,7 @@ public class NoteBook_fx extends Application{
         Button create_notebook_button = new Button("新建笔记本");
         guide_scene_root.getChildren().add(create_notebook_button);
 
-        Scene guide_scene = new Scene(guide_scene_root, 800, 500);
+        this.guide_scene = new Scene(guide_scene_root, 800, 500);
 
         //-----------------------------------------------------------------//
         //第二界面用于新的stage，创建笔记本
@@ -171,53 +177,117 @@ public class NoteBook_fx extends Application{
         Scene new_notebook_scene = new Scene(new_notebook_scene_root, 420, 160); 
 
         //-----------------------------------------------------------------//
-        //第三界面：主笔记界面 
-        //整体为splitpane，左侧为gridpane（笔记列表，笔记本选择），右侧为gridpane（标题，内容）
+        //第三界面：主笔记界面
+        //整体为splitpane，左侧为VBox（工具栏，笔记列表），右侧为笔记编辑区
         SplitPane main_splitpane = new SplitPane();
+        main_splitpane.setPadding(new Insets(0));
+        main_splitpane.setDividerPositions(0.35);
+        main_splitpane.setStyle("-fx-background-color: #f8f9fa; -fx-box-border: transparent;");
 
-        // 让整个内容距离窗口边缘有 20 像素的“呼吸空间”
-        main_splitpane.setPadding(new Insets(20));
-        main_splitpane.setDividerPositions(0.5);
-        //GridPane（笔记列表，笔记本选择）
-        GridPane note_list_scene_root = new GridPane();
+        // 左侧：工具栏 + 笔记列表
+        VBox left_panel = new VBox();
+        left_panel.setSpacing(0);
+        left_panel.setStyle("-fx-background-color: #ffffff; -fx-border-color: #e9ecef; -fx-border-width: 0 1 0 0;");
+
+        // 顶部工具栏：笔记本操作 + 新建笔记
+        HBox left_toolbar = new HBox();
+        left_toolbar.setSpacing(8);
+        left_toolbar.setPadding(new Insets(12, 16, 12, 16));
+        left_toolbar.setAlignment(Pos.CENTER_LEFT);
+        left_toolbar.setStyle("-fx-background-color: #ffffff;");
+
+        // 新建笔记本按钮（工具栏左侧）
+        //Button new_notebook_button_main = new Button();
+        //new_notebook_button_main.setTooltip(new javafx.scene.control.Tooltip("新建笔记本"));
+        //setIcon(new_notebook_button_main, "/icons/笔记本_notebook-one.png", 20);
+        //new_notebook_button_main.setStyle(getToolbarButtonStyle());
+
+        javafx.scene.layout.Region toolbar_spacer = new javafx.scene.layout.Region();
+        HBox.setHgrow(toolbar_spacer, Priority.ALWAYS);
+
+        // 新建笔记按钮（工具栏右侧）
+        Button new_note_button = new Button();
+        new_note_button.setTooltip(new javafx.scene.control.Tooltip("新建笔记"));
+        setIcon(new_note_button, "/icons/文件添加_file-addition.png", 20);
+        new_note_button.setStyle(getToolbarButtonStyle());
+
+        left_toolbar.getChildren().addAll(
+            //new_notebook_button_main,
+            //toolbar_spacer,
+            new_note_button
+        );
+
+        // 笔记本选择下拉菜单
+        HBox notebook_selector_bar = new HBox();
+        notebook_selector_bar.setPadding(new Insets(0, 16, 8, 16));
+        notebook_selector_bar.setAlignment(Pos.CENTER_LEFT);
+        notebook_selector_bar.setStyle("-fx-background-color: #ffffff;");
+        MenuButton select_notebook_button = new MenuButton("选择笔记本");
+        select_notebook_button.setStyle("-fx-background-color: transparent; -fx-font-size: 13px; -fx-text-fill: #495057;");
+        notebook_selector_bar.getChildren().add(select_notebook_button);
+
+        // 笔记列表
         ListView<String> note_list_view = new ListView<>();
         Label empty_title = new Label("暂无笔记");
-        empty_title.setStyle("-fx-text-fill: #95a5a6; -fx-font-style: italic;");
+        empty_title.setStyle("-fx-text-fill: #adb5bd; -fx-font-style: italic;");
         note_list_view.setPlaceholder(empty_title);
-        
-        note_list_view.setPrefWidth(400);
-        //下方创建新笔记，切换笔记本菜单
-        //icon加载
-        ImageView new_note_icon_view = null;
-        try (InputStream is = getClass().getResourceAsStream("/icons/文件添加_file-addition.png")){
-            new_note_icon_view = new ImageView(new Image(is));
-        } catch (Exception e) {
-            e.printStackTrace();
-            error_stackTrace.setText(e.getMessage());
-            error_stage.show();
-        }
-        Button new_note_button = new Button();
-        if (new_note_icon_view != null) {
-            new_note_button.setGraphic(new_note_icon_view);
-        }
-        new_note_button.setPrefWidth(40);
-        new_note_button.setPrefHeight(40);
-        //底部笔记本选择菜单
-        MenuButton select_notebook_button = new MenuButton();//后续绑定文本到当前笔记本名
-        //无论如何，笔记本选择菜单中有一个新建笔记本的选项
-        MenuItem new_notebook_item = new MenuItem("新建笔记本");
-        select_notebook_button.getItems().add(new_notebook_item);
-        
+        note_list_view.setPrefWidth(300);
+        note_list_view.setStyle("-fx-background-color: #ffffff; -fx-border-color: transparent; -fx-padding: 8;");
+        VBox.setVgrow(note_list_view, Priority.ALWAYS);
 
+        // 笔记列表右键菜单
+        ContextMenu note_context_menu = new ContextMenu();
+        note_context_menu.setStyle("-fx-background-color: #ffffff; -fx-border-color: #e9ecef;");
+        MenuItem rename_note_item = new MenuItem("重命名笔记");
+        MenuItem delete_note_item = new MenuItem("删除笔记");
+        note_context_menu.getItems().addAll(rename_note_item, delete_note_item);
+        note_list_view.setContextMenu(note_context_menu);
 
-        note_list_scene_root.add(new_note_button, 0, 0);
-        note_list_scene_root.add(note_list_view, 0, 1);
-        note_list_scene_root.add(select_notebook_button, 0, 2);
+        // 右键菜单事件：重命名笔记
+        rename_note_item.setOnAction(event -> {
+            String selectedTitle = note_list_view.getSelectionModel().getSelectedItem();
+            if (selectedTitle == null || selectedTitle.isEmpty()) return;
+            TextInputDialog rename_dialog = new TextInputDialog(selectedTitle);
+            rename_dialog.setTitle("重命名笔记");
+            rename_dialog.setHeaderText(null);
+            rename_dialog.setContentText("请输入新的笔记标题：");
+            rename_dialog.showAndWait().ifPresent(newTitle -> {
+                if (!newTitle.trim().isEmpty() && !newTitle.equals(selectedTitle)) {
+                    try {
+                        DB_Opearte.update_title(last_notebook_id, selectedTitle, newTitle.trim());
+                        refresh_title_list(last_notebook_id, note_list_view);
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                        error_stackTrace.setText(e.getMessage());
+                        error_stage.show();
+                    }
+                }
+            });
+        });
 
-        note_list_scene_root.setMinWidth(400);
+        // 右键菜单事件：删除笔记
+        delete_note_item.setOnAction(event -> {
+            String selectedTitle = note_list_view.getSelectionModel().getSelectedItem();
+            if (selectedTitle == null || selectedTitle.isEmpty()) return;
+            try {
+                DB_Opearte.delete_title(last_notebook_id, selectedTitle);
+                refresh_title_list(last_notebook_id, note_list_view);
+            } catch (SQLException e) {
+                e.printStackTrace();
+                error_stackTrace.setText(e.getMessage());
+                error_stage.show();
+            }
+        });
 
-        main_splitpane.getItems().add(note_list_scene_root);
-        Scene main_scene = new Scene(main_splitpane, 800, 500);
+        left_panel.getChildren().addAll(left_toolbar, notebook_selector_bar, note_list_view);
+
+        // 右侧：笔记编辑区占位
+        VBox right_panel = new VBox();
+        right_panel.setStyle("-fx-background-color: #ffffff;");
+        right_panel.setPrefWidth(500);
+
+        main_splitpane.getItems().addAll(left_panel, right_panel);
+        Scene main_scene = new Scene(main_splitpane, 900, 600);
         
         //-----------------------------------------------------------------//
 
@@ -370,6 +440,10 @@ public class NoteBook_fx extends Application{
                 refresh_title_list(notebook_id,note_list_view);
                 //设置select_notebook_button的文本为新创建的笔记本名
                 set_select_notebook_button_text(notebook_name, select_notebook_button);
+                //刷新笔记本下拉菜单（让新笔记本出现）
+                add_notebook_list(select_notebook_button, note_list_view);
+                // 创建后重新显示当前笔记本名（add_notebook_list 会 clear，需恢复）
+                set_select_notebook_button_text(notebook_name, select_notebook_button);
                 primaryStage.setScene(main_scene);
                 new_notebook_stage.close();
             }catch(SQLException e){
@@ -379,12 +453,13 @@ public class NoteBook_fx extends Application{
             }
         });
 
-        //对menu_item进行设置
-        new_notebook_item.setOnAction(event -> {
-            new_notebook_stage.show();
-        });
+        // 将 new_notebook_stage 存入 MenuButton 的 userData，供 add_notebook_list 内部的"新建笔记本"项使用
+        select_notebook_button.setUserData(new_notebook_stage);
 
-        //添加笔记本到菜单
+        // 创建成功后也刷新笔记本菜单列表（让新笔记本出现在下拉里）
+        // （已在 confirm_button.setOnAction 末尾追加刷新逻辑）
+
+        //添加笔记本到菜单（含"新建笔记本"首项，右键重命名/删除）
         try{
             add_notebook_list(select_notebook_button, note_list_view);
         }catch(SQLException e){
@@ -431,25 +506,117 @@ public class NoteBook_fx extends Application{
             }
     }
 
-    public void add_notebook_list(MenuButton menuButton, ListView<String> note_list_view)throws SQLException{
+    public void add_notebook_list(MenuButton menuButton, ListView<String> note_list_view) throws SQLException {
         try {
             ArrayList<Notebook> notebooks = DB_Opearte.query_all_notebooks();
             menuButton.getItems().clear();
+
+            // ① 始终保留"新建笔记本"作为第一项
+            MenuItem new_notebook_item_refresh = new MenuItem("✚ 新建笔记本");
+            new_notebook_item_refresh.setOnAction(event -> {
+                // 触发外部已存储的新建笔记本 stage，通过 userData 传递
+                Object stageObj = menuButton.getUserData();
+                if (stageObj instanceof Stage) {
+                    ((Stage) stageObj).show();
+                }
+            });
+            menuButton.getItems().add(new_notebook_item_refresh);
+
+            // ② 添加每个笔记本条目，并附带右键上下文菜单
             for (Notebook notebook : notebooks) {
                 MenuItem item = new MenuItem(notebook.getName());
-                menuButton.getItems().add(item);
-                //对menu_item进行设置
+
+                // 点击切换笔记本
                 item.setOnAction(event -> {
-                    //更新上次使用的笔记本ID
                     last_notebook_id = notebook.getId();
-                    set_select_notebook_button_text(notebook.getName(),menuButton);
-                    //刷新笔记列表
-                    try{
-                        refresh_title_list(last_notebook_id,note_list_view);
-                    }catch(SQLException e){
+                    set_select_notebook_button_text(notebook.getName(), menuButton);
+                    try {
+                        refresh_title_list(last_notebook_id, note_list_view);
+                    } catch (SQLException e) {
                         e.printStackTrace();
                     }
                 });
+
+                // 右键上下文菜单：重命名 / 删除
+                ContextMenu notebook_ctx = new ContextMenu();
+
+                MenuItem ctx_rename = new MenuItem("重命名笔记本");
+                ctx_rename.setOnAction(event -> {
+                    TextInputDialog dlg = new TextInputDialog(notebook.getName());
+                    dlg.setTitle("重命名笔记本");
+                    dlg.setHeaderText(null);
+                    dlg.setContentText("请输入新的笔记本名称：");
+                    dlg.showAndWait().ifPresent(newName -> {
+                        String trimmed = newName.trim();
+                        if (trimmed.isEmpty() || trimmed.equals(notebook.getName())) return;
+                        try {
+                            if (DB_Opearte.is_notebook_name_exists(trimmed)) {
+                                javafx.scene.control.Alert alert = new javafx.scene.control.Alert(
+                                    javafx.scene.control.Alert.AlertType.WARNING,
+                                    "笔记本名称\"" + trimmed + "\"已存在，请换一个名称。"
+                                );
+                                alert.setHeaderText(null);
+                                alert.showAndWait();
+                                return;
+                            }
+                            DB_Opearte.update_notebook_name(notebook.getId(), trimmed);
+                            // 如果改的是当前显示的笔记本，同步更新按钮文字
+                            if (notebook.getId() == last_notebook_id) {
+                                set_select_notebook_button_text(trimmed, menuButton);
+                            }
+                            // 刷新菜单列表（重新加载，让新名字生效）
+                            add_notebook_list(menuButton, note_list_view);
+                        } catch (SQLException e) {
+                            e.printStackTrace();
+                        }
+                    });
+                });
+
+                MenuItem ctx_delete = new MenuItem("删除笔记本");
+                ctx_delete.setOnAction(event -> {
+                    javafx.scene.control.Alert confirm = new javafx.scene.control.Alert(
+                        javafx.scene.control.Alert.AlertType.CONFIRMATION,
+                        "确定要删除笔记本" + notebook.getName() + "及其所有笔记吗？此操作不可撤销。",
+                        javafx.scene.control.ButtonType.YES,
+                        javafx.scene.control.ButtonType.NO
+                    );
+                    confirm.setTitle("删除笔记本");
+                    confirm.setHeaderText(null);
+                    confirm.showAndWait().ifPresent(btn -> {
+                        if (btn != javafx.scene.control.ButtonType.YES) return;
+                        try {
+                            DB_Opearte.delete_notebook(notebook.getId());
+                            // 若删除的是当前选中的笔记本，切换到其他或清空
+                            if (notebook.getId() == last_notebook_id) {
+                                last_notebook_id = -1;
+                                menuButton.setText("选择笔记本");
+                                note_list_view.getItems().clear();
+                            }
+                            // 刷新菜单列表
+                            add_notebook_list(menuButton, note_list_view);
+                            // 检查是否还有笔记本，如果没有则回到引导界面
+                            if (menuButton.getItems().size() <= 1) { // 只有"新建笔记本"项
+                                primaryStage.setScene(guide_scene);
+                            }
+                        } catch (SQLException e) {
+                            e.printStackTrace();
+                        }
+                    });
+                });
+
+                notebook_ctx.getItems().addAll(ctx_rename, ctx_delete);
+
+                // 将右键菜单绑定到 MenuItem 的图形节点（通过 Label 包装实现右键触发）
+                javafx.scene.control.Label item_label = new javafx.scene.control.Label(notebook.getName());
+                item_label.setPrefWidth(180);
+                item_label.setOnContextMenuRequested(e ->
+                    notebook_ctx.show(item_label, e.getScreenX(), e.getScreenY())
+                );
+                item.setGraphic(item_label);
+                // 清空文字避免重复显示（文字已在 Label 里）
+                item.setText("");
+
+                menuButton.getItems().add(item);
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -459,6 +626,30 @@ public class NoteBook_fx extends Application{
 
     public void set_select_notebook_button_text(String notebook_name, MenuButton menuButton){
         menuButton.setText(notebook_name);
+    }
+
+    // 辅助方法：为按钮设置图标
+    private void setIcon(Button button, String iconPath, int size) {
+        try (InputStream is = getClass().getResourceAsStream(iconPath)) {
+            if (is != null) {
+                ImageView iconView = new ImageView(new Image(is));
+                iconView.setFitWidth(size);
+                iconView.setFitHeight(size);
+                button.setGraphic(iconView);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    // 辅助方法：获取工具栏按钮统一样式
+    private String getToolbarButtonStyle() {
+        return "-fx-background-color: transparent; "
+             + "-fx-padding: 6; "
+             + "-fx-cursor: hand; "
+             + "-fx-background-radius: 6px; "
+             + "-fx-border-radius: 6px; "
+             + "-fx-border-color: transparent;";
     }
 
     public static void main(String[] args) {
