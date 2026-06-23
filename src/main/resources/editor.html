@@ -3,6 +3,26 @@
 <head>
     <meta charset="utf-8">
     <link rel="stylesheet" href="index.css" />
+    <script src="i18n/zh_CN.js"></script>
+    <script src="dist/js/icons/material.js"></script>
+    <script>
+        // 拦截 Vditor 的 i18n 网络请求，直接返回本地已加载的语言包
+        var _origXHROpen = XMLHttpRequest.prototype.open;
+        XMLHttpRequest.prototype.open = function(method, url) {
+            if (url && url.indexOf('i18n') !== -1 && window.VditorI18n) {
+                var xhr = this;
+                setTimeout(function() {
+                    Object.defineProperty(xhr, 'readyState', { value: 4, configurable: true });
+                    Object.defineProperty(xhr, 'status', { value: 200, configurable: true });
+                    Object.defineProperty(xhr, 'responseText', { value: '', configurable: true });
+                    if (xhr.onreadystatechange) xhr.onreadystatechange.call(xhr);
+                    if (xhr.onload) xhr.onload.call(xhr);
+                }, 0);
+                return;
+            }
+            return _origXHROpen.apply(this, arguments);
+        };
+    </script>
     <script src="index.min.js"></script>
     <style> 
         body, html, #vditor { height: 100%; margin: 0; padding: 0; border: none; }
@@ -67,8 +87,9 @@
             vditor = new Vditor('vditor', {
                 mode: 'wysiwyg',
                 value: '',
-                cache: { enable: false }, 
+                cache: { enable: false },
                 toolbarConfig: { hide: true },
+                cdn: '.',
                 after: function() {
                     startFontWeightObserver();
                     window.javaBridge.onReady();

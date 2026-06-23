@@ -378,14 +378,7 @@ public class NoteBook_fx extends Application{
         primaryStage.setMinWidth(800);
         primaryStage.setMinHeight(500);
         
-        // 窗口关闭时保存当前编辑的笔记并退出程序
-        primaryStage.setOnCloseRequest(event -> {
-            if (editor != null) {
-                editor.shutdown();
-            }
-            javafx.application.Platform.exit();
-            System.exit(0);
-        });
+        // 窗口关闭逻辑（保存配置 + 保存笔记 + 退出程序）在下方统一处理
         //primaryStage.show();
 
         Stage new_notebook_stage = new Stage();
@@ -586,7 +579,13 @@ public class NoteBook_fx extends Application{
                 error_stage.show();
             }
             finally{
+                // 保存当前编辑的笔记
+                if (editor != null) {
+                    editor.shutdown();
+                }
                 primaryStage.close();
+                javafx.application.Platform.exit();
+                System.exit(0);
             }
             
         });
@@ -687,17 +686,28 @@ public class NoteBook_fx extends Application{
             }
             //创建笔记
             try{
+                // 先保存当前编辑的内容
+                System.out.println("[DEBUG] 新建笔记前 saveNow, currentEditingTitle=" + currentEditingTitle[0]);
+                editor.saveNow();
+
+                System.out.println("[DEBUG] 创建笔记: notebook_id=" + last_notebook_id + ", title=" + note_name);
                 DB_Opearte.create_new_title(last_notebook_id, note_name);
-                
+
                 //刷新笔记列表
                 refresh_title_list(last_notebook_id, note_list_view);
-                
+
                 // 滚动到新创建的笔记并选中
                 note_list_view.getSelectionModel().select(note_name);
                 note_list_view.scrollTo(note_name);
-                
+
+                // 初始化编辑器：设置笔记信息并清空内容（新建笔记为空）
+                editor.setNoteInfo(last_notebook_id, note_name);
+                editor.setMarkdown("# 请输入标题");
+                currentEditingTitle[0] = note_name;
+                System.out.println("[DEBUG] 新建笔记完成: title=" + note_name + ", currentEditingTitle=" + currentEditingTitle[0]);
+
                 primaryStage.setScene(main_scene);
-                new_notebook_stage.close();
+                new_note_stage.close();
             }catch(SQLException e){
                 error_stackTrace.setText(e.getMessage());
                 error_stage.show();
