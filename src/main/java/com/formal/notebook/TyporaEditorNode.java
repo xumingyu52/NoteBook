@@ -89,6 +89,7 @@ public class TyporaEditorNode extends StackPane {
     public void setNoteInfo(int notebookId, String title) {
         this.currentNotebookId = notebookId;
         this.currentTitle = title;
+        System.out.println("[DEBUG] setNoteInfo: id=" + notebookId + ", title=" + title);
     }
 
     // 供外部调用的：获取当前最新 Markdown 文本
@@ -98,12 +99,14 @@ public class TyporaEditorNode extends StackPane {
 
     // 供外部调用的：从数据库读取后，塞入编辑器
     public void setMarkdown(String markdown) {
+        System.out.println("[DEBUG] setMarkdown: [" + markdown + "], initialized=" + initialized);
         this.currentMarkdown = markdown;
         if (initialized) {
             webEngine.executeScript("window.setMarkdown(`" + escapeJsString(markdown) + "`)");
         } else {
             // 还没初始化完成，缓存起来等 ready 后设置
             pendingInitialMarkdown = markdown;
+            System.out.println("[DEBUG] setMarkdown: cached for later (not initialized yet)");
         }
     }
 
@@ -132,11 +135,16 @@ public class TyporaEditorNode extends StackPane {
 
     // 执行保存到数据库
     private void performSave() {
+        System.out.println("[DEBUG] performSave: pendingContent=" + (pendingSaveContent != null ? "[" + pendingSaveContent + "](" + pendingSaveContent.length() + "chars)" : "null")
+            + ", notebookId=" + currentNotebookId
+            + ", title='" + currentTitle + "'");
         if (pendingSaveContent == null || currentNotebookId <= 0 || currentTitle.isEmpty()) {
+            System.out.println("[DEBUG] performSave SKIPPED (condition not met)");
             return;
         }
         try {
             DB_Opearte.update_content(currentNotebookId, currentTitle, pendingSaveContent);
+            System.out.println("[DEBUG] performSave SUCCESS for '" + currentTitle + "', saved content=[" + pendingSaveContent + "]");
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -145,9 +153,29 @@ public class TyporaEditorNode extends StackPane {
 
     // 立即保存（切换笔记或关闭时调用）
     public void saveNow() {
+        System.out.println("[DEBUG] saveNow called, currentTitle=" + currentTitle
+            + ", currentNotebookId=" + currentNotebookId);
         if (saveTimer != null) {
             saveTimer.cancel();
             saveTimer = null;
+        }
+        // 关键修复：主动从 WebView 获取最新内容，不依赖可能过时的 currentMarkdown
+        if (initialized && webEngine != null) {
+            try {
+                Object result = webEngine.executeScript("vditor.getValue()");
+                if (result instanceof String) {
+                    String latestContent = (String) result;
+                    System.out.println("[DEBUG] saveNow: 从 vditor.getValue() 获取到内容 [" + latestContent + "] (" + latestContent.length() + " chars)");
+                    pendingSaveContent = latestContent;
+                }
+            } catch (Exception e) {
+                System.out.println("[DEBUG] saveNow: vditor.getValue() 失败，回退到 currentMarkdown");
+                if (currentMarkdown != null && !currentMarkdown.isEmpty()) {
+                    pendingSaveContent = currentMarkdown;
+                }
+            }
+        } else if (currentMarkdown != null && !currentMarkdown.isEmpty()) {
+            pendingSaveContent = currentMarkdown;
         }
         performSave();
     }
@@ -163,6 +191,7 @@ public class TyporaEditorNode extends StackPane {
     public class JavaBridge {
         public void updateContent(String text) {
             currentMarkdown = text;
+            System.out.println("[DEBUG] updateContent: received " + (text != null ? text.length() : 0) + " chars, content=[" + text + "]");
             triggerSave(text); // 每次输入变化都触发延迟保存
         }
 
