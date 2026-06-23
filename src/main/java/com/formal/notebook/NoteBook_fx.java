@@ -281,10 +281,42 @@ public class NoteBook_fx extends Application{
 
         left_panel.getChildren().addAll(left_toolbar, notebook_selector_bar, note_list_view);
 
-        // 右侧：笔记编辑区占位
+        // 右侧：笔记编辑区
         VBox right_panel = new VBox();
         right_panel.setStyle("-fx-background-color: #ffffff;");
         right_panel.setPrefWidth(500);
+
+        // 创建 Typora 编辑器
+        TyporaEditorNode editor = new TyporaEditorNode("");
+        VBox.setVgrow(editor, Priority.ALWAYS);
+        right_panel.getChildren().add(editor);
+
+        // 记录当前编辑器打开的是哪个标题（用于切换前保存）
+        final String[] currentEditingTitle = {null};
+
+        // 笔记列表点击事件：打开笔记内容到编辑器
+        note_list_view.setOnMouseClicked(event -> {
+            String selectedTitle = note_list_view.getSelectionModel().getSelectedItem();
+            if (selectedTitle == null || selectedTitle.isEmpty()) return;
+            // 如果点击的还是同一个标题，不重复加载
+            if (selectedTitle.equals(currentEditingTitle[0])) return;
+
+            // 先保存当前编辑的内容
+            editor.saveNow();
+
+            try {
+                Title_and_Content content = DB_Opearte.query_title_and_content(last_notebook_id, selectedTitle);
+                if (content != null) {
+                    editor.setNoteInfo(last_notebook_id, selectedTitle);
+                    editor.setMarkdown(content.getContent());
+                    currentEditingTitle[0] = selectedTitle;
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+                error_stackTrace.setText(e.getMessage());
+                error_stage.show();
+            }
+        });
 
         main_splitpane.getItems().addAll(left_panel, right_panel);
         Scene main_scene = new Scene(main_splitpane, 900, 600);
@@ -345,6 +377,15 @@ public class NoteBook_fx extends Application{
         primaryStage.setScene(guide_scene);
         primaryStage.setMinWidth(800);
         primaryStage.setMinHeight(500);
+        
+        // 窗口关闭时保存当前编辑的笔记并退出程序
+        primaryStage.setOnCloseRequest(event -> {
+            if (editor != null) {
+                editor.shutdown();
+            }
+            javafx.application.Platform.exit();
+            System.exit(0);
+        });
         //primaryStage.show();
 
         Stage new_notebook_stage = new Stage();

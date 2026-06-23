@@ -5,29 +5,84 @@
     <link rel="stylesheet" href="index.css" />
     <script src="index.min.js"></script>
     <style> 
-        body, html, #vditor { height: 100%; margin: 0; padding: 0; border: none; } 
+        body, html, #vditor { height: 100%; margin: 0; padding: 0; border: none; }
+        /* 使用宋体，覆盖 index.css 中 .vditor-reset 的字体设置 */
+        body { font-family: "SimSun", "STSong", "宋体", serif !important; }
+        .vditor-wysiwyg,
+        .vditor-wysiwyg .vditor-reset,
+        .vditor-wysiwyg .vditor-wysiwyg__block,
+        .vditor-wysiwyg p,
+        .vditor-wysiwyg span {
+            font-family: "SimSun", "STSong", "宋体", serif !important;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
     </style>
 </head>
 <body>
     <div id="vditor"></div>
     <script>
         let vditor;
-        window.onload = () => {
+
+        // 只清除非粗体元素的 font-weight（保留 **bold** 语法效果），同时强制宋体
+        function normalizeFontWeight(root) {
+            const els = root.querySelectorAll('*');
+            for (let i = 0; i < els.length; i++) {
+                var el = els[i];
+                // Vditor 的粗体用 <strong> 标签或 class 包裹，不在这类元素上清除
+                if (el.tagName === 'STRONG' || el.tagName === 'B') continue;
+                if (el.className && typeof el.className === 'string' && el.className.indexOf('strong') >= 0) continue;
+                // 普通文本 span 清除多余的字重 + 强制宋体
+                el.style.fontWeight = '';
+                el.style.fontFamily = '"SimSun", "STSong", "宋体", serif';
+            }
+        }
+
+        let fontWeightObserver = null;
+
+        function startFontWeightObserver() {
+            var wysiwyg = document.querySelector('.vditor-wysiwyg');
+            if (!wysiwyg) return;
+            
+            normalizeFontWeight(wysiwyg);
+
+            fontWeightObserver = new MutationObserver(function(mutations) {
+                for (var j = 0; j < mutations.length; j++) {
+                    var m = mutations[j];
+                    if (m.addedNodes && m.addedNodes.length > 0) {
+                        m.addedNodes.forEach(function(node) {
+                            if (node.nodeType === 1) { 
+                                node.style.fontWeight = '';
+                                node.style.fontFamily = '"SimSun", "STSong", "宋体", serif';
+                                normalizeFontWeight(node);
+                            }
+                        });
+                    }
+                }
+            });
+            fontWeightObserver.observe(wysiwyg, { childList: true, subtree: true });
+        }
+
+        window.onload = function() {
             vditor = new Vditor('vditor', {
                 mode: 'wysiwyg',
-                value: '{{INITIAL_MARKDOWN}}',
+                value: '',
                 cache: { enable: false }, 
                 toolbarConfig: { hide: true },
-                after: () => {
+                after: function() {
+                    startFontWeightObserver();
                     window.javaBridge.onReady();
                 },
-                input: (value) => {
+                input: function(value) {
                     window.javaBridge.updateContent(value);
                 }
             });
         };
         
-        window.setMarkdown = (md) => { vditor.setValue(md); };
+        window.setMarkdown = function(md) { 
+            vditor.setValue(md); 
+            setTimeout(function() { normalizeFontWeight(document.querySelector('.vditor-wysiwyg')); }, 100);
+        };
     </script>
 </body>
 </html>
