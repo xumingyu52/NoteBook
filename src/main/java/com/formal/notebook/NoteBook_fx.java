@@ -58,6 +58,7 @@ public class NoteBook_fx extends Application{
          * 4.数据库错误窗口，用于显示数据库错误信息，包括错误类型，错误信息，错误位置
          */
 
+
         //-----------------------------------------------------------------//
         //场景制作区
         //-----------------------------------------------------------------//
@@ -247,22 +248,7 @@ public class NoteBook_fx extends Application{
         rename_note_item.setOnAction(event -> {
             String selectedTitle = note_list_view.getSelectionModel().getSelectedItem();
             if (selectedTitle == null || selectedTitle.isEmpty()) return;
-            TextInputDialog rename_dialog = new TextInputDialog(selectedTitle);
-            rename_dialog.setTitle("重命名笔记");
-            rename_dialog.setHeaderText(null);
-            rename_dialog.setContentText("请输入新的笔记标题：");
-            rename_dialog.showAndWait().ifPresent(newTitle -> {
-                if (!newTitle.trim().isEmpty() && !newTitle.equals(selectedTitle)) {
-                    try {
-                        DB_Opearte.update_title(last_notebook_id, selectedTitle, newTitle.trim());
-                        refresh_title_list(last_notebook_id, note_list_view);
-                    } catch (SQLException e) {
-                        e.printStackTrace();
-                        error_stackTrace.setText(e.getMessage());
-                        error_stage.show();
-                    }
-                }
-            });
+            renameNoteWithRetry(selectedTitle, note_list_view);
         });
 
         // 右键菜单事件：删除笔记
@@ -675,6 +661,7 @@ public class NoteBook_fx extends Application{
                 if(is_exists){
                     note_warning_label_2.setVisible(true);
                     note_warning_label_2.setManaged(true);
+                    return;
                 }else{
                     note_warning_label_2.setVisible(false);
                     note_warning_label_2.setManaged(false);
@@ -751,32 +738,7 @@ public class NoteBook_fx extends Application{
 
                 MenuItem ctx_rename = new MenuItem("重命名笔记本");
                 ctx_rename.setOnAction(event -> {
-                    TextInputDialog dlg = new TextInputDialog(notebook.getName());
-                    dlg.setTitle("重命名笔记本");
-                    dlg.setHeaderText(null);
-                    dlg.setContentText("请输入新的笔记本名称：");
-                    dlg.showAndWait().ifPresent(newName -> {
-                        String trimmed = newName.trim();
-                        if (trimmed.isEmpty() || trimmed.equals(notebook.getName())) return;
-                        try {
-                            if (DB_Opearte.is_notebook_name_exists(trimmed)) {
-                                javafx.scene.control.Alert alert = new javafx.scene.control.Alert(
-                                    javafx.scene.control.Alert.AlertType.WARNING,
-                                    "笔记本名称\"" + trimmed + "\"已存在，请换一个名称。"
-                                );
-                                alert.setHeaderText(null);
-                                alert.showAndWait();
-                                return;
-                            }
-                            DB_Opearte.update_notebook_name(notebook.getId(), trimmed);
-                            if (notebook.getId() == last_notebook_id) {
-                                set_select_notebook_button_text(trimmed, menuButton);
-                            }
-                            add_notebook_list(menuButton, note_list_view);
-                        } catch (SQLException e) {
-                            e.printStackTrace();
-                        }
-                    });
+                    renameNotebookWithRetry(notebook, menuButton, note_list_view);
                 });
 
                 MenuItem ctx_delete = new MenuItem("删除笔记本");
@@ -851,6 +813,69 @@ public class NoteBook_fx extends Application{
 
     public void set_select_notebook_button_text(String notebook_name, MenuButton menuButton){
         menuButton.setText(notebook_name);
+    }
+
+    // 重命名笔记（带重复检查，重名时弹窗警告并重新打开重命名窗口）
+    private void renameNoteWithRetry(String oldTitle, ListView<String> note_list_view) {
+        TextInputDialog rename_dialog = new TextInputDialog(oldTitle);
+        rename_dialog.setTitle("重命名笔记");
+        rename_dialog.setHeaderText(null);
+        rename_dialog.setContentText("请输入新的笔记标题：");
+        rename_dialog.showAndWait().ifPresent(newTitle -> {
+            String trimmed = newTitle.trim();
+            if (trimmed.isEmpty() || trimmed.equals(oldTitle)) return;
+            try {
+                if (DB_Opearte.is_title_exists(last_notebook_id, trimmed)) {
+                    javafx.scene.control.Alert alert = new javafx.scene.control.Alert(
+                        javafx.scene.control.Alert.AlertType.WARNING,
+                        "笔记名称 \"" + trimmed + "\" 已存在，请换一个名称。"
+                    );
+                    alert.setTitle("名称重复");
+                    alert.setHeaderText(null);
+                    alert.showAndWait();
+                    // 重新打开重命名窗口
+                    renameNoteWithRetry(oldTitle, note_list_view);
+                    return;
+                }
+                DB_Opearte.update_title(last_notebook_id, oldTitle, trimmed);
+                refresh_title_list(last_notebook_id, note_list_view);
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        });
+    }
+
+    // 重命名笔记本（带重复检查，重名时弹窗警告并重新打开重命名窗口）
+    private void renameNotebookWithRetry(Notebook notebook, MenuButton menuButton, ListView<String> note_list_view) {
+        TextInputDialog dlg = new TextInputDialog(notebook.getName());
+        dlg.setTitle("重命名笔记本");
+        dlg.setHeaderText(null);
+        dlg.setContentText("请输入新的笔记本名称：");
+        dlg.showAndWait().ifPresent(newName -> {
+            String trimmed = newName.trim();
+            if (trimmed.isEmpty() || trimmed.equals(notebook.getName())) return;
+            try {
+                if (DB_Opearte.is_notebook_name_exists(trimmed)) {
+                    javafx.scene.control.Alert alert = new javafx.scene.control.Alert(
+                        javafx.scene.control.Alert.AlertType.WARNING,
+                        "笔记本名称 \"" + trimmed + "\" 已存在，请换一个名称。"
+                    );
+                    alert.setTitle("名称重复");
+                    alert.setHeaderText(null);
+                    alert.showAndWait();
+                    // 重新打开重命名窗口
+                    renameNotebookWithRetry(notebook, menuButton, note_list_view);
+                    return;
+                }
+                DB_Opearte.update_notebook_name(notebook.getId(), trimmed);
+                if (notebook.getId() == last_notebook_id) {
+                    set_select_notebook_button_text(trimmed, menuButton);
+                }
+                add_notebook_list(menuButton, note_list_view);
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        });
     }
 
     // 辅助方法：为按钮设置图标
