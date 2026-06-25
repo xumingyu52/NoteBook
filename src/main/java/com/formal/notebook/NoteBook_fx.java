@@ -27,10 +27,7 @@ import javafx.scene.control.TextInputDialog;
 import javafx.scene.control.ToggleGroup;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.layout.GridPane;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Priority;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.*;
 import javafx.scene.text.Font;
 import javafx.scene.web.WebView;
 import javafx.stage.Modality;
@@ -281,23 +278,25 @@ public class NoteBook_fx extends Application{
         left_panel.getChildren().addAll(left_toolbar, notebook_selector_bar, note_list_view);
 
         // 右侧：笔记编辑区（带AI按钮）
-        VBox editor_panel = new VBox();
+        AnchorPane editor_panel = new AnchorPane();
         editor_panel.setStyle("-fx-background-color: #ffffff;");
         
         // 创建 Typora 编辑器
         TyporaEditorNode editor = new TyporaEditorNode("");
-        VBox.setVgrow(editor, Priority.ALWAYS);
+        AnchorPane.setTopAnchor(editor, 0.0);
+        AnchorPane.setBottomAnchor(editor, 0.0);
+        AnchorPane.setLeftAnchor(editor, 0.0);
+        AnchorPane.setRightAnchor(editor, 0.0);
         editor_panel.getChildren().add(editor);
         
         // AI 按钮（编辑器右下角浮动）
-        Button ai_button = new Button();
+        Button ai_button = new Button("AI");
         ai_button.setTooltip(new javafx.scene.control.Tooltip("AI 助手"));
-        ai_button.setStyle("-fx-background-color: #333; -fx-background-radius: 50%; -fx-cursor: hand; -fx-padding: 0;");
+        ai_button.setStyle("-fx-background-color: #333; -fx-text-fill: white; -fx-background-radius: 50%; -fx-cursor: hand; -fx-font-weight: bold; -fx-font-size: 14;");
         ai_button.setPrefSize(48, 48);
-        ai_button.setLayoutX(450);
-        ai_button.setLayoutY(500);
+        AnchorPane.setRightAnchor(ai_button, 16.0);
+        AnchorPane.setBottomAnchor(ai_button, 16.0);
         ai_button.setMouseTransparent(false);
-        setIcon(ai_button, "/icons/魔方_cube-four.png", 28);
         
         // AI 聊天面板（第三栏），初始隐藏
         AiChatPanel aiChatPanel = new AiChatPanel();
