@@ -1,5 +1,6 @@
 package com.formal.notebook;
 
+import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
@@ -113,17 +114,21 @@ public class AiChatPanel extends VBox {
             try {
                 String response = aiService.chat(prompt, currentContext);
                 this.lastResponse = response;
-                chatArea.appendText("AI: " + response + "\n\n");
-                
-                if (onContentGenerated != null) {
-                    onContentGenerated.run();
-                }
-                showStatus("完成");
+                Platform.runLater(() -> {
+                    chatArea.appendText("AI: " + response + "\n\n");
+                    if (onContentGenerated != null) {
+                        onContentGenerated.run();
+                    }
+                    showStatus("完成");
+                    sendButton.setDisable(false);
+                });
             } catch (Exception e) {
-                chatArea.appendText("错误: " + e.getMessage() + "\n\n");
-                showStatus("错误");
+                Platform.runLater(() -> {
+                    chatArea.appendText("错误: " + e.getMessage() + "\n\n");
+                    showStatus("错误");
+                    sendButton.setDisable(false);
+                });
             } finally {
-                sendButton.setDisable(false);
                 executor.shutdown();
             }
         });
