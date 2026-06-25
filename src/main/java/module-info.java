@@ -8,6 +8,12 @@ module com.formal.notebook {
     requires org.kordamp.bootstrapfx.core;
     requires com.almasb.fxgl.all;
     requires java.sql;
+    requires javafx.graphics;
+    requires java.desktop;
+    requires javafx.base;
+
+    requires javafx.web;
+    requires jdk.jsobject;
 
     opens com.formal.notebook to javafx.fxml;
     exports com.formal.notebook;

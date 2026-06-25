@@ -1,0 +1,17 @@
+/* 搜索高亮样式 */
+mark {
+    background-color: #ffeb3b;
+    color: #000;
+    font-weight: bold;
+    padding: 2px 4px;
+    border-radius: 2px;
+}
+
+body {
+    font-family: "Microsoft YaHei", "Arial", sans-serif;
+    font-size: 11px;
+    line-height: 1.4;
+    color: #495057;
+    margin: 0;
+    padding: 4px;
+}

@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <title>Editor.md</title>
+    <link rel="stylesheet" href="editormd/css/editormd.css" />
+    <style>
+        body, html, #editor { height: 100%; margin: 0; padding: 0; border: none; overflow: hidden; }
+        body { font-family: "SimSun", "STSong", "宋体", serif; }
+    </style>
+</head>
+<body>
+    <div id="editor">
+        <textarea style="display:none;"># 请输入标题
+
+开始编辑你的笔记...</textarea>
+    </div>
+
+    <script src="editormd/lib/jquery.min.js"></script>
+    <script src="editormd/editormd.min.js"></script>
+    <script>
+        var editor;
+
+        $(function() {
+            editor = editormd("editor", {
+                width: "100%",
+                height: "100%",
+                path: "editormd/lib/",
+                syncScrolling: "single",
+                onchange: function() {
+                    if (window.javaBridge) {
+                        window.javaBridge.updateContent(editor.getMarkdown());
+                    }
+                }
+            });
+        });
+
+        window.setMarkdown = function(md) {
+            editor.setMarkdown(md, true);
+        };
+
+        window.getMarkdown = function() {
+            return editor.getMarkdown();
+        };
+    </script>
+</body>
+</html>

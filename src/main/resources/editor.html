@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="tui-editor/toastui-editor.css" />
+    <style>
+        body, html, #editor { height: 100%; margin: 0; padding: 0; border: none; overflow: hidden; }
+        body { font-family: "SimSun", "STSong", "宋体", serif; }
+        .tui-editor-contents { font-family: "SimSun", "STSong", "宋体", serif; }
+        #loading { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 16px; color: #666; }
+    </style>
+</head>
+<body>
+    <div id="loading">正在加载编辑器...</div>
+    <div id="editor"></div>
+
+    <script src="tui-editor/toastui-editor.js"></script>
+    <script>
+        var editor;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('loading').style.display = 'none';
+            try {
+                if (typeof toastui === 'undefined') {
+                    document.getElementById('editor').innerHTML = 'TuiEditor 加载失败！';
+                    return;
+                }
+                editor = new toastui.Editor({
+                    el: document.querySelector('#editor'),
+                    height: '100%',
+                    initialEditType: 'wysiwyg',
+                    previewStyle: 'tab',
+                    language: 'zh-CN',
+                    hooks: {
+                        onChange: function() {
+                            if (window.javaBridge) {
+                                window.javaBridge.updateContent(editor.getMarkdown());
+                            }
+                        }
+                    }
+                });
+                if (window.javaBridge) {
+                    window.javaBridge.onReady();
+                }
+            } catch (e) {
+                document.getElementById('editor').innerHTML = '编辑器初始化失败: ' + e.message;
+            }
+        });
+
+        window.setMarkdown = function(md) {
+            if (editor) {
+                editor.setMarkdown(md);
+            }
+        };
+
+        window.getMarkdown = function() {
+            if (editor) {
+                return editor.getMarkdown();
+            }
+            return '';
+        };
+    </script>
+</body>
+</html>

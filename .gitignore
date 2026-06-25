@@ -41,4 +41,5 @@ build/
 src/main/java/com/formal/notebook/db.properties
 =======
 /src/main/java/com/formal/notebook/db.properties
->>>>>>> develop
+db.properties
+Config.properties

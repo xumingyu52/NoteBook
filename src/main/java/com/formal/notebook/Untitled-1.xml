@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 400">
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#555"/>
+    </marker>
+  </defs>
+  
+  <rect x="250" y="15" width="200" height="50" rx="8" fill="#e8f4fd" stroke="#3498db" stroke-width="2"/>
+  <text x="350" y="47" text-anchor="middle" font-size="16" font-weight="bold" fill="#2980b9">NoteBook_fx 主程序</text>
+  
+  <rect x="30" y="110" width="150" height="50" rx="8" fill="#fef9e7" stroke="#f1c40f" stroke-width="2"/>
+  <text x="105" y="142" text-anchor="middle" font-size="14" font-weight="bold" fill="#b7950b">界面交互模块</text>
+  
+  <rect x="220" y="110" width="150" height="50" rx="8" fill="#eafaf1" stroke="#27ae60" stroke-width="2"/>
+  <text x="295" y="142" text-anchor="middle" font-size="14" font-weight="bold" fill="#1e8449">笔记本管理模块</text>
+  
+  <rect x="410" y="110" width="150" height="50" rx="8" fill="#fdf2e9" stroke="#e67e22" stroke-width="2"/>
+  <text x="485" y="142" text-anchor="middle" font-size="14" font-weight="bold" fill="#ca6f1e">笔记管理模块</text>
+  
+  <rect x="520" y="210" width="150" height="50" rx="8" fill="#f4ecf7" stroke="#9b59b6" stroke-width="2"/>
+  <text x="595" y="242" text-anchor="middle" font-size="14" font-weight="bold" fill="#7d3c98">编辑器模块</text>
+  
+  <line x1="350" y1="65" x2="105" y2="108" stroke="#555" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="350" y1="65" x2="295" y2="108" stroke="#555" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="350" y1="65" x2="485" y2="108" stroke="#555" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="485" y1="160" x2="595" y2="208" stroke="#555" stroke-width="1.5" marker-end="url(#arrow)"/>
+  
+  <rect x="20" y="180" width="170" height="90" rx="6" fill="#fff" stroke="#ccc" stroke-dasharray="4"/>
+  <text x="105" y="200" text-anchor="middle" font-size="11" fill="#666">• 引导界面 / 主界面</text>
+  <text x="105" y="218" text-anchor="middle" font-size="11" fill="#666">• 新建笔记本弹窗</text>
+  <text x="105" y="236" text-anchor="middle" font-size="11" fill="#666">• 新建笔记弹窗</text>
+  <text x="105" y="254" text-anchor="middle" font-size="11" fill="#666">• 右键菜单 / 错误提示</text>
+  
+  <rect x="210" y="180" width="170" height="90" rx="6" fill="#fff" stroke="#ccc" stroke-dasharray="4"/>
+  <text x="295" y="200" text-anchor="middle" font-size="11" fill="#666">• create_new_notebook()</text>
+  <text x="295" y="218" text-anchor="middle" font-size="11" fill="#666">• delete_notebook()</text>
+  <text x="295" y="236" text-anchor="middle" font-size="11" fill="#666">• update_notebook_name()</text>
+  <text x="295" y="254" text-anchor="middle" font-size="11" fill="#666">• query_all_notebooks()</text>
+  
+  <rect x="400" y="180" width="170" height="90" rx="6" fill="#fff" stroke="#ccc" stroke-dasharray="4"/>
+  <text x="485" y="200" text-anchor="middle" font-size="11" fill="#666">• create_new_title()</text>
+  <text x="485" y="218" text-anchor="middle" font-size="11" fill="#666">• delete_title()</text>
+  <text x="485" y="236" text-anchor="middle" font-size="11" fill="#666">• update_title()</text>
+  <text x="485" y="254" text-anchor="middle" font-size="11" fill="#666">• query_all_titles()</text>
+  
+  <rect x="510" y="280" width="215" height="90" rx="6" fill="#fff" stroke="#ccc" stroke-dasharray="4"/>
+  <text x="617" y="300" text-anchor="middle" font-size="11" fill="#666">• TyporaEditorNode 编辑器组件</text>
+  <text x="617" y="318" text-anchor="middle" font-size="11" fill="#666">• Vditor Markdown 引擎 (WebView)</text>
+  <text x="617" y="336" text-anchor="middle" font-size="11" fill="#666">• 自动保存（2秒延迟）</text>
+  <text x="617" y="354" text-anchor="middle" font-size="11" fill="#666">• Java-JavaScript 桥梁通信</text>
+
+  <rect x="30" y="310" width="160" height="70" rx="8" fill="#fadbd8" stroke="#e74c3c" stroke-width="2"/>
+  <text x="110" y="337" text-anchor="middle" font-size="13" font-weight="bold" fill="#c0392b">MySQL 数据库</text>
+  <text x="110" y="357" text-anchor="middle" font-size="11" fill="#a93226">notebook + Title_and_Content</text>
+  
+  <line x1="105" y1="270" x2="110" y2="308" stroke="#e74c3c" stroke-width="1.5" stroke-dasharray="4" marker-end="url(#arrow)"/>
+  <line x1="295" y1="270" x2="160" y2="308" stroke="#e74c3c" stroke-width="1.5" stroke-dasharray="4" marker-end="url(#arrow)"/>
+  <line x1="485" y1="270" x2="175" y2="308" stroke="#e74c3c" stroke-width="1.5" stroke-dasharray="4" marker-end="url(#arrow)"/>
+</svg>
