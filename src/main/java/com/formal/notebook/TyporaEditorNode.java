@@ -50,6 +50,7 @@ public class TyporaEditorNode extends StackPane {
         String js = readResource("/dist/index.min.js");
         String i18n = readResource("/dist/js/i18n/zh_CN.js");
         String icons = readResource("/dist/js/icons/material.js");
+        String loadingIcon = readImageAsBase64("/icons/加载4_loading-four.png");
         
         return "<!DOCTYPE html>" +
             "<html lang=\"zh-CN\">" +
@@ -64,9 +65,28 @@ public class TyporaEditorNode extends StackPane {
             "    -webkit-font-smoothing: antialiased;" +
             "    -moz-osx-font-smoothing: grayscale;" +
             "}" +
+            "#loading-mask {" +
+            "    position: fixed; top: 0; left: 0; width: 100%; height: 100%;" +
+            "    background: #fff; display: flex; align-items: center; justify-content: center;" +
+            "    z-index: 9999; flex-direction: column;" +
+            "}" +
+            "#loading-mask img {" +
+            "    width: 48px; height: 48px; animation: spin 1s linear infinite;" +
+            "}" +
+            "#loading-mask span {" +
+            "    margin-top: 12px; color: #999; font-size: 14px;" +
+            "}" +
+            "@keyframes spin {" +
+            "    from { transform: rotate(0deg); }" +
+            "    to { transform: rotate(360deg); }" +
+            "}" +
             "</style>" +
             "</head>" +
             "<body>" +
+            "<div id=\"loading-mask\">" +
+            "    <img src=\"" + loadingIcon + "\" alt=\"loading\">" +
+            "    <span>正在加载编辑器...</span>" +
+            "</div>" +
             "<div id=\"vditor\"></div>" +
             "<script>" + i18n + "</script>" +
             "<script>" + icons + "</script>" +
@@ -76,6 +96,7 @@ public class TyporaEditorNode extends StackPane {
             "document.addEventListener('DOMContentLoaded', function() {" +
             "    try {" +
             "        if (typeof Vditor === 'undefined') {" +
+            "            document.getElementById('loading-mask').style.display = 'none';" +
             "            document.getElementById('vditor').innerHTML = 'Vditor 未加载'; return;" +
             "        }" +
             "        vditor = new Vditor('vditor', {" +
@@ -85,6 +106,7 @@ public class TyporaEditorNode extends StackPane {
             "            toolbarConfig: { hide: false }," +
             "            icon: 'material'," +
             "            after: function() {" +
+            "                document.getElementById('loading-mask').style.display = 'none';" +
             "                if (window.javaBridge) window.javaBridge.onReady();" +
             "            }," +
             "            input: function(value) {" +
@@ -92,6 +114,7 @@ public class TyporaEditorNode extends StackPane {
             "            }" +
             "        });" +
             "    } catch(e) {" +
+            "        document.getElementById('loading-mask').style.display = 'none';" +
             "        document.getElementById('vditor').innerHTML = '初始化失败: ' + e.message;" +
             "    }" +
             "});" +
@@ -100,6 +123,17 @@ public class TyporaEditorNode extends StackPane {
             "</script>" +
             "</body>" +
             "</html>";
+    }
+    
+    private String readImageAsBase64(String path) {
+        try (java.io.InputStream is = getClass().getResourceAsStream(path)) {
+            if (is == null) return "";
+            byte[] bytes = new byte[is.available()];
+            is.read(bytes);
+            return "data:image/png;base64," + java.util.Base64.getEncoder().encodeToString(bytes);
+        } catch (Exception e) {
+            return "";
+        }
     }
 
     private String readResource(String path) {
