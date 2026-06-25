@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 750 320">
+<style>
+.step { fill: #f0f7ff; stroke: #4a90d9; stroke-width: 1.5; rx: 6; }
+.stepText { font-size: 12px; fill: #333; text-anchor: middle; }
+.timeLabel { font-size: 11px; fill: #888; font-style: italic; }
+.arrowLine { stroke: #4a90d9; stroke-width: 1.5; fill: none; marker-end: url(#h2); }
+</style>
+<defs>
+<marker id="h2" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+<polygon points="0 0, 8 3, 0 6" fill="#4a90d9"/>
+</marker>
+</defs>
+
+<text x="10" y="25" class="timeLabel">时间 →</text>
+<line x1="60" y1="35" x2="730" y2="35" stroke="#ddd" stroke-width="1"/>
+
+<!-- 定时自动保存流程 -->
+<rect x="60" y="55" width="145" height="45" class="step"/>
+<text x="132" y="75" class="stepText">用户输入字符</text>
+<text x="132" y="92" font-size="10" fill="#888" text-anchor="middle">input 回调触发</text>
+
+<rect x="220" y="55" width="145" height="45" class="step"/>
+<text x="292" y="75" class="stepText">updateContent()</text>
+<text x="292" y="92" font-size="10" fill="#888" text-anchor="middle">缓存最新内容</text>
+
+<rect x="380" y="55" width="145" height="45" class="step"/>
+<text x="452" y="75" class="stepText">triggerSave()</text>
+<text x="452" y="92" font-size="10" fill="#888" text-anchor="middle">重置 2s 定时器</text>
+
+<rect x="540" y="55" width="170" height="45" class="step"/>
+<text x="625" y="75" class="stepText">performSave()</text>
+<text x="625" y="92" font-size="10" fill="#888" text-anchor="middle">写入 MySQL</text>
+
+<path d="M205 77 L215 77" class="arrowLine"/>
+<path d="M365 77 L375 77" class="arrowLine"/>
+<path d="M525 77 L535 77" class="arrowLine"/>
+
+<!-- saveNow 立即保存分支 -->
+<rect x="220" y="145" width="145" height="45" rx="6" fill="#fff8e1" stroke="#e6a23c" stroke-width="1.5"/>
+<text x="292" y="165" class="stepText">切换 / 关闭时</text>
+<text x="292" y="182" font-size="10" fill="#888" text-anchor="middle">调用 saveNow()</text>
+
+<rect x="380" y="145" width="145" height="45" rx="6" fill="#fff8e1" stroke="#e6a23c" stroke-width="1.5"/>
+<text x="452" y="165" class="stepText">vditor.getValue()</text>
+<text x="452" y="182" font-size="10" fill="#888" text-anchor="middle">主动拉取最新内容</text>
+
+<rect x="540" y="145" width="170" height="45" rx="6" fill="#fff8e1" stroke="#e6a23c" stroke-width="1.5"/>
+<text x="625" y="165" class="stepText">performSave()</text>
+<text x="625" y="182" font-size="10" fill="#888" text-anchor="middle">写入 MySQL</text>
+
+<path d="M365 167 L375 167" stroke="#e6a23c" stroke-width="1.5" fill="none" marker-end="url(#h2)"/>
+<path d="M525 167 L535 167" stroke="#e6a23c" stroke-width="1.5" fill="none" marker-end="url(#h2)"/>
+
+<!-- 底部说明 -->
+<text x="330" y="230" font-size="11" fill="#4a90d9" text-anchor="middle">持续输入 = 不断重置定时器，直到停止输入超过 2 秒</text>
+<text x="430" y="260" font-size="11" fill="#e6a23c" text-anchor="middle">不依赖 input 回调，直接从 Vditor 引擎获取最新内容</text>
+<line x1="200" y1="240" x2="460" y2="240" stroke="#4a90d9" stroke-width="1" stroke-dasharray="4,4"/>
+<line x1="300" y1="270" x2="560" y2="270" stroke="#e6a23c" stroke-width="1" stroke-dasharray="4,4"/>
+</svg>

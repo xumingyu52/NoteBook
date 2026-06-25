@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 780 440">
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#555"/>
+    </marker>
+    <marker id="arrow-red" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#e74c3c"/>
+    </marker>
+  </defs>
+  
+  <!-- 主程序 -->
+  <rect x="290" y="15" width="200" height="50" rx="8" fill="#e8f4fd" stroke="#3498db" stroke-width="2"/>
+  <text x="390" y="47" text-anchor="middle" font-size="16" font-weight="bold" fill="#2980b9">NoteBook_fx 主程序</text>
+  
+  <!-- 第二行：三个模块 -->
+  <rect x="30" y="110" width="150" height="50" rx="8" fill="#fef9e7" stroke="#f1c40f" stroke-width="2"/>
+  <text x="105" y="142" text-anchor="middle" font-size="14" font-weight="bold" fill="#b7950b">界面交互模块</text>
+  
+  <rect x="220" y="110" width="150" height="50" rx="8" fill="#eafaf1" stroke="#27ae60" stroke-width="2"/>
+  <text x="295" y="142" text-anchor="middle" font-size="14" font-weight="bold" fill="#1e8449">笔记本管理模块</text>
+  
+  <rect x="410" y="110" width="150" height="50" rx="8" fill="#fdf2e9" stroke="#e67e22" stroke-width="2"/>
+  <text x="485" y="142" text-anchor="middle" font-size="14" font-weight="bold" fill="#ca6f1e">笔记管理模块</text>
+
+  <!-- 编辑器模块 - 移到右侧独立位置，不被遮挡 -->
+  <rect x="600" y="110" width="150" height="50" rx="8" fill="#f4ecf7" stroke="#9b59b6" stroke-width="2"/>
+  <text x="675" y="142" text-anchor="middle" font-size="14" font-weight="bold" fill="#7d3c98">编辑器模块</text>
+  
+  <!-- 主程序到四个模块的连线 -->
+  <line x1="340" y1="65" x2="105" y2="108" stroke="#555" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="370" y1="65" x2="295" y2="108" stroke="#555" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="410" y1="65" x2="485" y2="108" stroke="#555" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="450" y1="65" x2="675" y2="108" stroke="#555" stroke-width="1.5" marker-end="url(#arrow)"/>
+  
+  <!-- 笔记管理到编辑器的连线 -->
+  <line x1="535" y1="135" x2="598" y2="135" stroke="#555" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- 第三行：各模块的详细内容 -->
+  <!-- 界面交互详情 -->
+  <rect x="20" y="190" width="170" height="90" rx="6" fill="#fff" stroke="#ccc" stroke-dasharray="4"/>
+  <text x="105" y="210" text-anchor="middle" font-size="11" fill="#666">• 引导界面 / 主界面</text>
+  <text x="105" y="228" text-anchor="middle" font-size="11" fill="#666">• 新建笔记本弹窗</text>
+  <text x="105" y="246" text-anchor="middle" font-size="11" fill="#666">• 新建笔记弹窗</text>
+  <text x="105" y="264" text-anchor="middle" font-size="11" fill="#666">• 右键菜单 / 错误提示</text>
+  
+  <!-- 笔记本管理详情 -->
+  <rect x="210" y="190" width="170" height="90" rx="6" fill="#fff" stroke="#ccc" stroke-dasharray="4"/>
+  <text x="295" y="210" text-anchor="middle" font-size="11" fill="#666">• create_new_notebook()</text>
+  <text x="295" y="228" text-anchor="middle" font-size="11" fill="#666">• delete_notebook()</text>
+  <text x="295" y="246" text-anchor="middle" font-size="11" fill="#666">• update_notebook_name()</text>
+  <text x="295" y="264" text-anchor="middle" font-size="11" fill="#666">• query_all_notebooks()</text>
+  
+  <!-- 笔记管理详情 -->
+  <rect x="400" y="190" width="170" height="90" rx="6" fill="#fff" stroke="#ccc" stroke-dasharray="4"/>
+  <text x="485" y="210" text-anchor="middle" font-size="11" fill="#666">• create_new_title()</text>
+  <text x="485" y="228" text-anchor="middle" font-size="11" fill="#666">• delete_title()</text>
+  <text x="485" y="246" text-anchor="middle" font-size="11" fill="#666">• update_title()</text>
+  <text x="485" y="264" text-anchor="middle" font-size="11" fill="#666">• query_all_titles() / query_content()</text>
+
+  <!-- 编辑器详情 - 完整显示在编辑器模块下方 -->
+  <rect x="590" y="190" width="175" height="100" rx="6" fill="#fff" stroke="#ccc" stroke-dasharray="4"/>
+  <text x="677" y="210" text-anchor="middle" font-size="11" fill="#666">• TyporaEditorNode 组件</text>
+  <text x="677" y="228" text-anchor="middle" font-size="11" fill="#666">• Vditor 引擎 (WebView)</text>
+  <text x="677" y="246" text-anchor="middle" font-size="11" fill="#666">• 自动保存（2秒延迟）</text>
+  <text x="677" y="264" text-anchor="middle" font-size="11" fill="#666">• Java-JS 桥梁通信</text>
+  <text x="677" y="282" text-anchor="middle" font-size="11" fill="#666">• 加载动画 / 宋体渲染</text>
+  
+  <!-- 模块到详情的连线 -->
+  <line x1="105" y1="160" x2="105" y2="188" stroke="#999" stroke-width="1" stroke-dasharray="3"/>
+  <line x1="295" y1="160" x2="295" y2="188" stroke="#999" stroke-width="1" stroke-dasharray="3"/>
+  <line x1="485" y1="160" x2="485" y2="188" stroke="#999" stroke-width="1" stroke-dasharray="3"/>
+  <line x1="675" y1="160" x2="675" y2="188" stroke="#999" stroke-width="1" stroke-dasharray="3"/>
+  
+  <!-- 数据库 - 左下角 -->
+  <rect x="120" y="340" width="180" height="70" rx="8" fill="#fadbd8" stroke="#e74c3c" stroke-width="2"/>
+  <text x="210" y="367" text-anchor="middle" font-size="13" font-weight="bold" fill="#c0392b">MySQL 数据库</text>
+  <text x="210" y="387" text-anchor="middle" font-size="11" fill="#a93226">notebook + Title_and_Content</text>
+  
+  <!-- 各模块到数据库的连线 -->
+  <line x1="105" y1="280" x2="180" y2="338" stroke="#e74c3c" stroke-width="1.5" stroke-dasharray="4" marker-end="url(#arrow-red)"/>
+  <line x1="295" y1="280" x2="220" y2="338" stroke="#e74c3c" stroke-width="1.5" stroke-dasharray="4" marker-end="url(#arrow-red)"/>
+  <line x1="485" y1="280" x2="260" y2="338" stroke="#e74c3c" stroke-width="1.5" stroke-dasharray="4" marker-end="url(#arrow-red)"/>
+</svg>

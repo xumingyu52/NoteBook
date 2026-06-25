@@ -65,7 +65,7 @@ public class NoteBook_fx extends Application{
         //第四界面：异常界面贯穿全代码，需提前
         GridPane error_scene_root = new GridPane();
 
-        // 让整个内容距离窗口边缘有 20 像素的“呼吸空间”
+        // 让整个内容距离窗口边缘有 20 像素的页边距
         error_scene_root.setPadding(new Insets(20));
         // 让左边图标和右边表单之间横向隔开 20 像素
         error_scene_root.setHgap(25); 
