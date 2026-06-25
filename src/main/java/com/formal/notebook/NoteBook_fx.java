@@ -281,16 +281,58 @@ public class NoteBook_fx extends Application{
 
         left_panel.getChildren().addAll(left_toolbar, notebook_selector_bar, note_list_view);
 
-        // 右侧：笔记编辑区
-        VBox right_panel = new VBox();
-        right_panel.setStyle("-fx-background-color: #ffffff;");
-        right_panel.setPrefWidth(500);
-
+        // 右侧：笔记编辑区（带AI按钮）
+        VBox editor_panel = new VBox();
+        editor_panel.setStyle("-fx-background-color: #ffffff;");
+        
         // 创建 Typora 编辑器
         TyporaEditorNode editor = new TyporaEditorNode("");
         VBox.setVgrow(editor, Priority.ALWAYS);
-        right_panel.getChildren().add(editor);
-
+        editor_panel.getChildren().add(editor);
+        
+        // AI 按钮（编辑器右下角浮动）
+        Button ai_button = new Button("🤖");
+        ai_button.setTooltip(new javafx.scene.control.Tooltip("AI 助手"));
+        ai_button.setStyle("-fx-background-color: #333; -fx-text-fill: white; -fx-background-radius: 50%; -fx-font-size: 20; -fx-cursor: hand;");
+        ai_button.setPrefSize(48, 48);
+        ai_button.setLayoutX(450);
+        ai_button.setLayoutY(500);
+        ai_button.setMouseTransparent(false);
+        
+        // AI 聊天面板（第三栏）
+        AiChatPanel aiChatPanel = new AiChatPanel();
+        aiChatPanel.setOnContentGenerated(() -> {
+            String aiResponse = aiChatPanel.getAiResponse();
+            if (aiResponse != null && !aiResponse.isEmpty()) {
+                String currentContent = editor.getMarkdown();
+                editor.setMarkdown(currentContent + "\n\n" + aiResponse);
+            }
+        });
+        
+        // AI 按钮事件
+        ai_button.setOnAction(event -> {
+            try {
+                if (!ApiConfigDao.hasConfig()) {
+                    new ApiConfigDialog().show();
+                } else {
+                    ApiConfig config = ApiConfigDao.getDefaultConfig();
+                    if (config != null) {
+                        AiService service = new AiService(config);
+                        aiChatPanel.setService(service);
+                        aiChatPanel.setContext(editor.getMarkdown());
+                        aiChatPanel.show();
+                    }
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+                error_stackTrace.setText(e.getMessage());
+                error_stage.show();
+            }
+        });
+        
+        // 将 AI 按钮添加到编辑器面板
+        editor_panel.getChildren().add(ai_button);
+        
         // 记录当前编辑器打开的是哪个标题（用于切换前保存）
         final String[] currentEditingTitle = {null};
 
@@ -298,10 +340,8 @@ public class NoteBook_fx extends Application{
         note_list_view.setOnMouseClicked(event -> {
             String selectedTitle = note_list_view.getSelectionModel().getSelectedItem();
             if (selectedTitle == null || selectedTitle.isEmpty()) return;
-            // 如果点击的还是同一个标题，不重复加载
             if (selectedTitle.equals(currentEditingTitle[0])) return;
 
-            // 先保存当前编辑的内容
             editor.saveNow();
 
             try {
@@ -317,9 +357,12 @@ public class NoteBook_fx extends Application{
                 error_stage.show();
             }
         });
-
-        main_splitpane.getItems().addAll(left_panel, right_panel);
-        Scene main_scene = new Scene(main_splitpane, 900, 600);
+        
+        // 三栏布局：笔记列表 | 编辑器 | AI聊天面板
+        main_splitpane.getItems().addAll(left_panel, editor_panel, aiChatPanel);
+        main_splitpane.setDividerPositions(0.25, 0.65);
+        
+        Scene main_scene = new Scene(main_splitpane, 1200, 700);
         
         //-----------------------------------------------------------------//
         //第五界面：新建笔记界面
