@@ -2,107 +2,62 @@
 <html lang="zh-CN">
 <head>
     <meta charset="utf-8">
-    <link rel="stylesheet" href="index.css" />
-    <script src="i18n/zh_CN.js"></script>
-    <script src="dist/js/icons/material.js"></script>
-    <script>
-        // 拦截 Vditor 的 i18n 网络请求，直接返回本地已加载的语言包
-        var _origXHROpen = XMLHttpRequest.prototype.open;
-        XMLHttpRequest.prototype.open = function(method, url) {
-            if (url && url.indexOf('i18n') !== -1 && window.VditorI18n) {
-                var xhr = this;
-                setTimeout(function() {
-                    Object.defineProperty(xhr, 'readyState', { value: 4, configurable: true });
-                    Object.defineProperty(xhr, 'status', { value: 200, configurable: true });
-                    Object.defineProperty(xhr, 'responseText', { value: '', configurable: true });
-                    if (xhr.onreadystatechange) xhr.onreadystatechange.call(xhr);
-                    if (xhr.onload) xhr.onload.call(xhr);
-                }, 0);
-                return;
-            }
-            return _origXHROpen.apply(this, arguments);
-        };
-    </script>
-    <script src="index.min.js"></script>
-    <style> 
-        body, html, #vditor { height: 100%; margin: 0; padding: 0; border: none; }
-        /* 使用宋体，覆盖 index.css 中 .vditor-reset 的字体设置 */
-        body { font-family: "SimSun", "STSong", "宋体", serif !important; }
-        .vditor-wysiwyg,
-        .vditor-wysiwyg .vditor-reset,
-        .vditor-wysiwyg .vditor-wysiwyg__block,
-        .vditor-wysiwyg p,
-        .vditor-wysiwyg span {
-            font-family: "SimSun", "STSong", "宋体", serif !important;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
-        }
+    <link rel="stylesheet" href="tui-editor/toastui-editor.css" />
+    <style>
+        body, html, #editor { height: 100%; margin: 0; padding: 0; border: none; overflow: hidden; }
+        body { font-family: "SimSun", "STSong", "宋体", serif; }
+        .tui-editor-contents { font-family: "SimSun", "STSong", "宋体", serif; }
+        #loading { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 16px; color: #666; }
     </style>
 </head>
 <body>
-    <div id="vditor"></div>
+    <div id="loading">正在加载编辑器...</div>
+    <div id="editor"></div>
+
+    <script src="tui-editor/toastui-editor.js"></script>
     <script>
-        let vditor;
+        var editor;
 
-        // 只清除非粗体元素的 font-weight（保留 **bold** 语法效果），同时强制宋体
-        function normalizeFontWeight(root) {
-            const els = root.querySelectorAll('*');
-            for (let i = 0; i < els.length; i++) {
-                var el = els[i];
-                // Vditor 的粗体用 <strong> 标签或 class 包裹，不在这类元素上清除
-                if (el.tagName === 'STRONG' || el.tagName === 'B') continue;
-                if (el.className && typeof el.className === 'string' && el.className.indexOf('strong') >= 0) continue;
-                // 普通文本 span 清除多余的字重 + 强制宋体
-                el.style.fontWeight = '';
-                el.style.fontFamily = '"SimSun", "STSong", "宋体", serif';
-            }
-        }
-
-        let fontWeightObserver = null;
-
-        function startFontWeightObserver() {
-            var wysiwyg = document.querySelector('.vditor-wysiwyg');
-            if (!wysiwyg) return;
-            
-            normalizeFontWeight(wysiwyg);
-
-            fontWeightObserver = new MutationObserver(function(mutations) {
-                for (var j = 0; j < mutations.length; j++) {
-                    var m = mutations[j];
-                    if (m.addedNodes && m.addedNodes.length > 0) {
-                        m.addedNodes.forEach(function(node) {
-                            if (node.nodeType === 1) { 
-                                node.style.fontWeight = '';
-                                node.style.fontFamily = '"SimSun", "STSong", "宋体", serif';
-                                normalizeFontWeight(node);
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('loading').style.display = 'none';
+            try {
+                if (typeof toastui === 'undefined') {
+                    document.getElementById('editor').innerHTML = 'TuiEditor 加载失败！';
+                    return;
+                }
+                editor = new toastui.Editor({
+                    el: document.querySelector('#editor'),
+                    height: '100%',
+                    initialEditType: 'wysiwyg',
+                    previewStyle: 'tab',
+                    language: 'zh-CN',
+                    hooks: {
+                        onChange: function() {
+                            if (window.javaBridge) {
+                                window.javaBridge.updateContent(editor.getMarkdown());
                             }
-                        });
+                        }
                     }
-                }
-            });
-            fontWeightObserver.observe(wysiwyg, { childList: true, subtree: true });
-        }
-
-        window.onload = function() {
-            vditor = new Vditor('vditor', {
-                mode: 'wysiwyg',
-                value: '',
-                cache: { enable: false },
-                toolbarConfig: { hide: true },
-                cdn: '.',
-                after: function() {
-                    startFontWeightObserver();
+                });
+                if (window.javaBridge) {
                     window.javaBridge.onReady();
-                },
-                input: function(value) {
-                    window.javaBridge.updateContent(value);
                 }
-            });
+            } catch (e) {
+                document.getElementById('editor').innerHTML = '编辑器初始化失败: ' + e.message;
+            }
+        });
+
+        window.setMarkdown = function(md) {
+            if (editor) {
+                editor.setMarkdown(md);
+            }
         };
-        
-        window.setMarkdown = function(md) { 
-            vditor.setValue(md); 
-            setTimeout(function() { normalizeFontWeight(document.querySelector('.vditor-wysiwyg')); }, 100);
+
+        window.getMarkdown = function() {
+            if (editor) {
+                return editor.getMarkdown();
+            }
+            return '';
         };
     </script>
 </body>
