@@ -15,9 +15,11 @@ import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Label;
+import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.MenuButton;
 import javafx.scene.control.MenuItem;
+import javafx.scene.control.Pagination;
 import javafx.scene.control.RadioButton;
 import javafx.scene.control.SplitPane;
 import javafx.scene.control.TextField;
@@ -30,8 +32,10 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
+import javafx.scene.web.WebView;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
+import javafx.util.Callback;
 
 public class NoteBook_fx extends Application{
     private int last_notebook_id = -1;
@@ -368,7 +372,7 @@ public class NoteBook_fx extends Application{
 
         //-----------------------------------------------------------------//
         //第六界面：搜索窗口
-        //搜索窗口包含：搜索框、搜索选项（按标题/按内容/按标题和内容）、搜索结果列表
+        //搜索窗口包含：搜索框、搜索选项（按标题/按内容/按标题和内容）、搜索结果列表、分页控件
         VBox search_scene_root = new VBox();
         search_scene_root.setPadding(new Insets(16));
         search_scene_root.setSpacing(12);
@@ -411,22 +415,105 @@ public class NoteBook_fx extends Application{
         
         search_options_hbox.getChildren().addAll(title_radio, content_radio, both_radio);
 
-        // 搜索结果列表
-        ListView<String> search_result_list = new ListView<>();
+        // 搜索结果信息显示
+        Label search_info_label = new Label("请输入关键词进行搜索");
+        search_info_label.setStyle("-fx-font-size: 12px; -fx-text-fill: #6c757d;");
+
+        // 搜索结果列表（使用WebView支持HTML高亮显示）
+        ListView<SearchResult> search_result_list = new ListView<>();
         Label search_empty_label = new Label("搜索结果为空");
         search_empty_label.setStyle("-fx-text-fill: #adb5bd; -fx-font-style: italic;");
         search_result_list.setPlaceholder(search_empty_label);
         search_result_list.setStyle("-fx-background-color: #f8f9fa; -fx-border-color: #e9ecef; -fx-border-radius: 6px;");
+        search_result_list.setCellFactory(new Callback<ListView<SearchResult>, ListCell<SearchResult>>() {
+            @Override
+            public ListCell<SearchResult> call(ListView<SearchResult> param) {
+                return new ListCell<SearchResult>() {
+                    private final VBox cellContent = new VBox();
+                    private final Label titleLabel = new Label();
+                    private final WebView contextWebView = new WebView();
+                    private final Label relevanceLabel = new Label();
+                    
+                    {
+                        cellContent.setSpacing(4);
+                        cellContent.setPadding(new Insets(8, 4, 8, 4));
+                        
+                        titleLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 13px; -fx-text-fill: #2c3e50;");
+                        relevanceLabel.setStyle("-fx-font-size: 10px; -fx-text-fill: #6c757d;");
+                        
+                        contextWebView.setPrefHeight(60);
+                        contextWebView.setContextMenuEnabled(false);
+                        contextWebView.setZoom(0.8);
+                        
+                        cellContent.getChildren().addAll(titleLabel, contextWebView, relevanceLabel);
+                    }
+
+                    @Override
+                    protected void updateItem(SearchResult result, boolean empty) {
+                        super.updateItem(result, empty);
+                        
+                        if (empty || result == null) {
+                            setGraphic(null);
+                        } else {
+                            try {
+                                String notebookName = DB_Opearte.get_notebook_name(result.getNotebook_id());
+                                titleLabel.setText("📒 " + notebookName + " / " + result.getTitle());
+                                
+                                if (result.getContextFragment() != null && !result.getContextFragment().isEmpty()) {
+                                    String htmlContent = "<html><head><style>" +
+                                        "mark { background-color: #ffeb3b; color: #000; font-weight: bold; padding: 2px 4px; border-radius: 2px; }" +
+                                        "body { font-family: 'Microsoft YaHei', 'Arial', sans-serif; font-size: 11px; line-height: 1.4; color: #495057; margin: 0; padding: 4px; }" +
+                                        "</style></head><body>" + result.getHighlightFragment() + "</body></html>";
+                                    contextWebView.getEngine().loadContent(htmlContent);
+                                    contextWebView.setVisible(true);
+                                } else {
+                                    contextWebView.setVisible(false);
+                                }
+                                
+                                relevanceLabel.setText("相关性评分: " + result.getRelevanceScore());
+                                
+                                setGraphic(cellContent);
+                            } catch (SQLException e) {
+                                setGraphic(null);
+                            }
+                        }
+                    }
+                };
+            }
+        });
+        
         VBox.setVgrow(search_result_list, Priority.ALWAYS);
 
-        search_scene_root.getChildren().addAll(search_box_hbox, search_options_hbox, search_result_list);
+        // 分页控件
+        final int[] currentPage = {1};
+        final int[] pageSize = {10};
+        final int[] totalPages = {1};
         
-        Scene search_scene = new Scene(search_scene_root, 500, 400);
+        HBox pagination_hbox = new HBox();
+        pagination_hbox.setSpacing(8);
+        pagination_hbox.setAlignment(Pos.CENTER);
+        
+        Button prev_button = new Button("上一页");
+        prev_button.setDisable(true);
+        prev_button.setStyle("-fx-background-color: #f8f9fa; -fx-border-color: #dee2e6; -fx-border-radius: 4px; -fx-background-radius: 4px;");
+        
+        Label page_info_label = new Label("第 " + currentPage[0] + " / " + totalPages[0] + " 页");
+        page_info_label.setStyle("-fx-font-size: 12px; -fx-text-fill: #495057;");
+        
+        Button next_button = new Button("下一页");
+        next_button.setDisable(true);
+        next_button.setStyle("-fx-background-color: #f8f9fa; -fx-border-color: #dee2e6; -fx-border-radius: 4px; -fx-background-radius: 4px;");
+        
+        pagination_hbox.getChildren().addAll(prev_button, page_info_label, next_button);
+
+        search_scene_root.getChildren().addAll(search_box_hbox, search_options_hbox, search_info_label, search_result_list, pagination_hbox);
+        
+        Scene search_scene = new Scene(search_scene_root, 600, 500);
         
         Stage search_stage = new Stage();
         search_stage.setTitle("搜索笔记");
         search_stage.setScene(search_scene);
-        search_stage.setResizable(false);
+        search_stage.setResizable(true);
         search_stage.initOwner(primaryStage);
         search_stage.initModality(Modality.WINDOW_MODAL);
 
@@ -779,8 +866,9 @@ public class NoteBook_fx extends Application{
         //搜索功能事件处理
         //--------------------------------------------------------------//
         
-        // 存储搜索结果，用于点击跳转
-        final ArrayList<Title_and_Content> search_results_data = new ArrayList<>();
+        // 存储所有搜索结果，用于分页
+        final ArrayList<SearchResult> all_search_results = new ArrayList<>();
+        final ArrayList<SearchResult> current_page_results = new ArrayList<>();
 
         // 搜索按钮点击事件
         search_button.setOnAction(event -> {
@@ -792,36 +880,52 @@ public class NoteBook_fx extends Application{
             String keyword = search_input.getText().trim();
             if (keyword.isEmpty()) {
                 search_result_list.getItems().clear();
+                search_info_label.setText("请输入关键词进行搜索");
                 return;
             }
-
-            search_results_data.clear();
             
             try {
-                ArrayList<Title_and_Content> results;
+                long startTime = System.currentTimeMillis();
+                
+                ArrayList<SearchResult> results;
                 
                 if (title_radio.isSelected()) {
-                    results = DB_Opearte.searchByTitle(keyword);
+                    results = DB_Opearte.enhancedSearchByTitle(keyword);
                 } else if (content_radio.isSelected()) {
-                    results = DB_Opearte.searchByContent(keyword);
+                    results = DB_Opearte.enhancedSearchByContent(keyword);
                 } else {
-                    results = DB_Opearte.searchByTitleAndContent(keyword);
+                    results = DB_Opearte.enhancedSearchByTitleAndContent(keyword);
                 }
                 
-                search_results_data.addAll(results);
+                // 按相关性排序
+                com.formal.notebook.SearchUtils.sortByRelevance(results);
                 
-                ArrayList<String> displayResults = new ArrayList<>();
-                for (Title_and_Content item : results) {
-                    String notebookName = DB_Opearte.get_notebook_name(item.getNotebook_id());
-                    displayResults.add("📒 " + notebookName + " / " + item.getTitle());
-                }
+                // 先查询成功，再清空并添加新数据，避免异常时数据不一致
+                all_search_results.clear();
+                all_search_results.addAll(results);
                 
-                search_result_list.setItems(FXCollections.observableArrayList(displayResults));
+                current_page_results.clear();
+                currentPage[0] = 1;
+                
+                // 计算总页数
+                totalPages[0] = com.formal.notebook.SearchUtils.getTotalPages(all_search_results.size(), pageSize[0]);
+                
+                // 显示第一页结果
+                current_page_results.addAll(com.formal.notebook.SearchUtils.paginateResults(all_search_results, currentPage[0], pageSize[0]));
+                search_result_list.setItems(FXCollections.observableArrayList(current_page_results));
+                
+                // 更新分页控件状态
+                updatePaginationControls(prev_button, next_button, page_info_label, currentPage, totalPages);
+                
+                // 更新搜索信息
+                long endTime = System.currentTimeMillis();
+                search_info_label.setText("找到 " + all_search_results.size() + " 个结果，耗时 " + (endTime - startTime) + "ms");
                 
             } catch (SQLException e) {
                 error_stackTrace.setText(e.getMessage());
                 error_stage.show();
                 e.printStackTrace();
+                search_info_label.setText("搜索出错：" + e.getMessage());
             }
         });
 
@@ -832,14 +936,35 @@ public class NoteBook_fx extends Application{
             }
         });
 
+        // 上一页按钮事件
+        prev_button.setOnAction(event -> {
+            if (currentPage[0] > 1) {
+                currentPage[0]--;
+                current_page_results.clear();
+                current_page_results.addAll(com.formal.notebook.SearchUtils.paginateResults(all_search_results, currentPage[0], pageSize[0]));
+                search_result_list.setItems(FXCollections.observableArrayList(current_page_results));
+                updatePaginationControls(prev_button, next_button, page_info_label, currentPage, totalPages);
+            }
+        });
+
+        // 下一页按钮事件
+        next_button.setOnAction(event -> {
+            if (currentPage[0] < totalPages[0]) {
+                currentPage[0]++;
+                current_page_results.clear();
+                current_page_results.addAll(com.formal.notebook.SearchUtils.paginateResults(all_search_results, currentPage[0], pageSize[0]));
+                search_result_list.setItems(FXCollections.observableArrayList(current_page_results));
+                updatePaginationControls(prev_button, next_button, page_info_label, currentPage, totalPages);
+            }
+        });
+
         // 搜索结果点击事件：跳转并打开笔记
         search_result_list.setOnMouseClicked(event -> {
-            int selectedIndex = search_result_list.getSelectionModel().getSelectedIndex();
-            if (selectedIndex < 0 || selectedIndex >= search_results_data.size()) return;
+            SearchResult selectedResult = search_result_list.getSelectionModel().getSelectedItem();
+            if (selectedResult == null) return;
 
-            Title_and_Content selectedNote = search_results_data.get(selectedIndex);
-            int notebookId = selectedNote.getNotebook_id();
-            String title = selectedNote.getTitle();
+            int notebookId = selectedResult.getNotebook_id();
+            String title = selectedResult.getTitle();
 
             try {
                 // 先保存当前编辑的内容
@@ -858,7 +983,7 @@ public class NoteBook_fx extends Application{
                 note_list_view.scrollTo(title);
                 
                 editor.setNoteInfo(notebookId, title);
-                editor.setMarkdown(selectedNote.getContent());
+                editor.setMarkdown(selectedResult.getContent());
                 currentEditingTitle[0] = title;
 
                 // 关闭搜索窗口
@@ -874,6 +999,16 @@ public class NoteBook_fx extends Application{
             }
         });
 
+    }
+
+    /**
+     * 更新分页控件状态
+     */
+    private void updatePaginationControls(Button prevButton, Button nextButton, Label pageInfoLabel, 
+                                         int[] currentPage, int[] totalPages) {
+        prevButton.setDisable(currentPage[0] <= 1);
+        nextButton.setDisable(currentPage[0] >= totalPages[0]);
+        pageInfoLabel.setText("第 " + currentPage[0] + " / " + totalPages[0] + " 页");
     }
 
     public void refresh_title_list(int notebook_id, ListView<String> title_list)throws SQLException{
