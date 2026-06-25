@@ -13,29 +13,52 @@ import java.util.Properties;
 
 public class DB_Opearte
 {
-    // 1. 数据库连接字符串（URL）
+    // 数据库连接字符串（URL）
     private static String URL;
-    // 2. 你的本地 MySQL 用户名，默认一般是 root
-    private static String USER;
-
-    // 数据库密码
-    private static String PASSWORD;
 
     static {
         Properties props = new Properties();
         try{
             props.load(new FileInputStream("db.properties"));
-
             URL = props.getProperty("db.url");
-            USER = props.getProperty("db.user");
-            PASSWORD = props.getProperty("db.password");
-
+            // 加载 SQLite 驱动
+            Class.forName("org.sqlite.JDBC");
         }catch(IOException e){
             System.err.println("❌ 配置文件加载失败，请检查 db.properties 文件是否存在！");
+            e.printStackTrace();
+        } catch (ClassNotFoundException e) {
+            System.err.println("❌ SQLite 驱动加载失败！");
             e.printStackTrace();
         }
     }
 
+    //----------------------------------------------------------------------------------//
+    //----------------------------------------------------------------------------------//
+    //表初始化
+    public static void initTables() throws SQLException {
+        String createNotebookSql = "CREATE TABLE IF NOT EXISTS notebook (" +
+                "id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                "name TEXT NOT NULL" +
+                ");";
+        
+        String createTitleAndContentSql = "CREATE TABLE IF NOT EXISTS Title_and_Content (" +
+                "id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                "content TEXT NOT NULL," +
+                "notebook_id INTEGER NOT NULL," +
+                "title TEXT NOT NULL," +
+                "UNIQUE(notebook_id, title)" +
+                ");";
+        
+        try (Connection conn = DriverManager.getConnection(URL)) {
+            try (PreparedStatement stmt1 = conn.prepareStatement(createNotebookSql)) {
+                stmt1.executeUpdate();
+            }
+            try (PreparedStatement stmt2 = conn.prepareStatement(createTitleAndContentSql)) {
+                stmt2.executeUpdate();
+            }
+        }
+    }
+    
     //----------------------------------------------------------------------------------//
     //----------------------------------------------------------------------------------//
     //笔记本操作函数区
@@ -44,7 +67,7 @@ public class DB_Opearte
     public static void create_new_notebook(String notebook_name) throws SQLException{
         String sql = "INSERT INTO notebook (name) VALUES (?)";
 
-        try(Connection conn = DriverManager.getConnection(URL,USER,PASSWORD)){
+        try(Connection conn = DriverManager.getConnection(URL)){
             try (PreparedStatement stmt = conn.prepareStatement(sql)){
                 // 3. 设置参数并执行 SQL 语句
                 stmt.setString(1,notebook_name);
@@ -66,7 +89,7 @@ public class DB_Opearte
         String deleteContentSql = "DELETE FROM Title_and_Content WHERE notebook_id = ?;";
         String deleteNotebookSql = "DELETE FROM notebook WHERE id = ?;";
 
-        try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD)) {
+        try (Connection conn = DriverManager.getConnection(URL)) {
             //取消自动提交保存，防止没有完成所有删除步骤
             conn.setAutoCommit(false);
 
@@ -97,7 +120,7 @@ public class DB_Opearte
     //修改笔记本名
     public static void update_notebook_name(int notebook_id, String new_name) throws SQLException{
         String update_sql = "UPDATE notebook SET name = ? WHERE id = ?;";
-        try(Connection conn = DriverManager.getConnection(URL,USER,PASSWORD)){
+        try(Connection conn = DriverManager.getConnection(URL)){
             try (PreparedStatement stmt = conn.prepareStatement(update_sql)){
                 stmt.setString(1,new_name);
                 stmt.setInt(2,notebook_id);
@@ -120,7 +143,7 @@ public class DB_Opearte
         ArrayList<Notebook> notebooks = new ArrayList<>();
         String query_sql = "SELECT id, name FROM notebook;";
 
-        try(Connection conn = DriverManager.getConnection(URL,USER,PASSWORD)){
+        try(Connection conn = DriverManager.getConnection(URL)){
             try (PreparedStatement stmt = conn.prepareStatement(query_sql)){
                 try (ResultSet rt = stmt.executeQuery()){
 
@@ -151,7 +174,7 @@ public class DB_Opearte
     public static int get_notebook_id(String notebook_name) throws SQLException{
         String query_sql = "SELECT id FROM notebook WHERE name = ?;";
         int notebook_id = 0;
-        try(Connection conn = DriverManager.getConnection(URL,USER,PASSWORD)){
+        try(Connection conn = DriverManager.getConnection(URL)){
             try (PreparedStatement stmt = conn.prepareStatement(query_sql)){
                 stmt.setString(1,notebook_name);
                 try (ResultSet rt = stmt.executeQuery()){
@@ -180,7 +203,7 @@ public class DB_Opearte
     public static boolean is_notebook_name_exists(String notebook_name) throws SQLException{
         String query_sql = "SELECT name FROM notebook WHERE name = ?;";
         boolean exists = false;
-        try(Connection conn = DriverManager.getConnection(URL,USER,PASSWORD)){
+        try(Connection conn = DriverManager.getConnection(URL)){
             try (PreparedStatement stmt = conn.prepareStatement(query_sql)){
                 stmt.setString(1,notebook_name);
                 try (ResultSet rt = stmt.executeQuery()){
@@ -209,7 +232,7 @@ public class DB_Opearte
     public static String get_notebook_name(int notebook_id) throws SQLException{
         String query_sql = "SELECT name FROM notebook WHERE id = ?;";
         String notebook_name = "";
-        try(Connection conn = DriverManager.getConnection(URL,USER,PASSWORD)){
+        try(Connection conn = DriverManager.getConnection(URL)){
             try (PreparedStatement stmt = conn.prepareStatement(query_sql)){
                 stmt.setInt(1,notebook_id);
                 try (ResultSet rt = stmt.executeQuery()){
@@ -241,7 +264,7 @@ public class DB_Opearte
    public static ArrayList<String> query_all_titles(int notebook_id) throws SQLException{
         ArrayList<String> titles = new ArrayList<>();
         String query_sql = "SELECT title FROM Title_and_Content WHERE notebook_id = ?;";
-        try(Connection conn = DriverManager.getConnection(URL,USER,PASSWORD)){
+        try(Connection conn = DriverManager.getConnection(URL)){
             try (PreparedStatement stmt = conn.prepareStatement(query_sql)){
                 stmt.setInt(1,notebook_id);
                 try (ResultSet rt = stmt.executeQuery()){
@@ -278,7 +301,7 @@ public class DB_Opearte
             return; // 直接返回，不执行插入操作
         }
 
-        try(Connection conn = DriverManager.getConnection(URL,USER,PASSWORD)){
+        try(Connection conn = DriverManager.getConnection(URL)){
             try (PreparedStatement stmt = conn.prepareStatement(sql)){
                 stmt.setInt(1,notebook_id);
                 stmt.setString(2,title);
@@ -302,7 +325,7 @@ public class DB_Opearte
     public static void update_content(int notebook_id, String title, String content) throws SQLException{
         String sql = "UPDATE Title_and_Content SET content = ? WHERE notebook_id = ? AND title = ?;";
 
-        try(Connection conn = DriverManager.getConnection(URL,USER,PASSWORD)){
+        try(Connection conn = DriverManager.getConnection(URL)){
             try (PreparedStatement stmt = conn.prepareStatement(sql)){
                 stmt.setString(1, content);
                 stmt.setInt(2, notebook_id);
@@ -332,7 +355,7 @@ public class DB_Opearte
     public static void update_title(int notebook_id, String old_title, String new_title) throws SQLException{
         String sql = "UPDATE Title_and_Content SET title = ? WHERE notebook_id = ? AND title = ?;";
 
-        try(Connection conn = DriverManager.getConnection(URL,USER,PASSWORD)){
+        try(Connection conn = DriverManager.getConnection(URL)){
             try (PreparedStatement stmt = conn.prepareStatement(sql)){
                 stmt.setString(1, new_title);
                 stmt.setInt(2, notebook_id);
@@ -355,7 +378,7 @@ public class DB_Opearte
     public static Title_and_Content query_title_and_content(int notebook_id, String title) throws SQLException{
         String query_sql = "SELECT notebook_id, title, content FROM Title_and_Content WHERE notebook_id = ? AND title = ?;";
 
-        try(Connection conn = DriverManager.getConnection(URL,USER,PASSWORD)){
+        try(Connection conn = DriverManager.getConnection(URL)){
             try (PreparedStatement stmt = conn.prepareStatement(query_sql)){
                 stmt.setInt(1,notebook_id);
                 stmt.setString(2,title);
@@ -385,7 +408,7 @@ public class DB_Opearte
                 System.err.println("❌ 标题不存在，无法删除！");
                 return; // 直接返回，不执行删除操作
             }
-        try(Connection conn = DriverManager.getConnection(URL,USER,PASSWORD)){
+        try(Connection conn = DriverManager.getConnection(URL)){
 
             try (PreparedStatement stmt = conn.prepareStatement(sql)){
                 
@@ -412,7 +435,7 @@ public class DB_Opearte
     public static boolean is_title_exists(int notebook_id, String title) throws SQLException {
         String sql = "SELECT 1 FROM Title_and_Content WHERE notebook_id = ? AND title = ? LIMIT 1;";
         
-        try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
+        try (Connection conn = DriverManager.getConnection(URL);
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             
             stmt.setInt(1, notebook_id);
@@ -437,7 +460,7 @@ public class DB_Opearte
      */
     private static ArrayList<Title_and_Content> search(String sql, String... params) throws SQLException {
         ArrayList<Title_and_Content> results = new ArrayList<>();
-        try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
+        try (Connection conn = DriverManager.getConnection(URL);
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             for (int i = 0; i < params.length; i++) {
                 stmt.setString(i + 1, "%" + params[i] + "%");
@@ -468,7 +491,7 @@ public class DB_Opearte
      */
     private static ArrayList<SearchResult> enhancedSearch(String sql, String keyword, String... params) throws SQLException {
         ArrayList<SearchResult> results = new ArrayList<>();
-        try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
+        try (Connection conn = DriverManager.getConnection(URL);
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             for (int i = 0; i < params.length; i++) {
                 stmt.setString(i + 1, "%" + params[i] + "%");

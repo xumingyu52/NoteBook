@@ -10,32 +10,32 @@ import java.util.ArrayList;
 public class ApiConfigDao {
     
     private static String URL;
-    private static String USER;
-    private static String PASSWORD;
     
     static {
         java.util.Properties props = new java.util.Properties();
         try{
             props.load(new java.io.FileInputStream("db.properties"));
             URL = props.getProperty("db.url");
-            USER = props.getProperty("db.user");
-            PASSWORD = props.getProperty("db.password");
+            // 加载 SQLite 驱动
+            Class.forName("org.sqlite.JDBC");
         }catch(java.io.IOException e){
+            e.printStackTrace();
+        } catch (ClassNotFoundException e) {
             e.printStackTrace();
         }
     }
     
     public static void createTable() throws SQLException {
         String sql = "CREATE TABLE IF NOT EXISTS api_config (" +
-                "id INT AUTO_INCREMENT PRIMARY KEY," +
-                "name VARCHAR(100) NOT NULL," +
-                "base_url VARCHAR(255) NOT NULL," +
-                "model_id VARCHAR(100) NOT NULL," +
+                "id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                "name TEXT NOT NULL," +
+                "base_url TEXT NOT NULL," +
+                "model_id TEXT NOT NULL," +
                 "api_key TEXT NOT NULL," +
                 "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP" +
-                ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;";
+                ");";
         
-        try(Connection conn = DriverManager.getConnection(URL, USER, PASSWORD)){
+        try(Connection conn = DriverManager.getConnection(URL)){
             try (PreparedStatement stmt = conn.prepareStatement(sql)){
                 stmt.executeUpdate();
             }
@@ -45,7 +45,7 @@ public class ApiConfigDao {
     public static void addConfig(ApiConfig config) throws SQLException {
         String sql = "INSERT INTO api_config (name, base_url, model_id, api_key) VALUES (?, ?, ?, ?);";
         
-        try(Connection conn = DriverManager.getConnection(URL, USER, PASSWORD)){
+        try(Connection conn = DriverManager.getConnection(URL)){
             try (PreparedStatement stmt = conn.prepareStatement(sql)){
                 stmt.setString(1, config.getName());
                 stmt.setString(2, config.getBaseUrl());
@@ -59,7 +59,7 @@ public class ApiConfigDao {
     public static void updateConfig(ApiConfig config) throws SQLException {
         String sql = "UPDATE api_config SET name = ?, base_url = ?, model_id = ?, api_key = ? WHERE id = ?;";
         
-        try(Connection conn = DriverManager.getConnection(URL, USER, PASSWORD)){
+        try(Connection conn = DriverManager.getConnection(URL)){
             try (PreparedStatement stmt = conn.prepareStatement(sql)){
                 stmt.setString(1, config.getName());
                 stmt.setString(2, config.getBaseUrl());
@@ -74,7 +74,7 @@ public class ApiConfigDao {
     public static void deleteConfig(int id) throws SQLException {
         String sql = "DELETE FROM api_config WHERE id = ?;";
         
-        try(Connection conn = DriverManager.getConnection(URL, USER, PASSWORD)){
+        try(Connection conn = DriverManager.getConnection(URL)){
             try (PreparedStatement stmt = conn.prepareStatement(sql)){
                 stmt.setInt(1, id);
                 stmt.executeUpdate();
@@ -85,7 +85,7 @@ public class ApiConfigDao {
     public static ApiConfig getConfig(int id) throws SQLException {
         String sql = "SELECT * FROM api_config WHERE id = ?;";
         
-        try(Connection conn = DriverManager.getConnection(URL, USER, PASSWORD)){
+        try(Connection conn = DriverManager.getConnection(URL)){
             try (PreparedStatement stmt = conn.prepareStatement(sql)){
                 stmt.setInt(1, id);
                 try (ResultSet rs = stmt.executeQuery()){
@@ -108,7 +108,7 @@ public class ApiConfigDao {
         ArrayList<ApiConfig> configs = new ArrayList<>();
         String sql = "SELECT * FROM api_config ORDER BY created_at DESC;";
         
-        try(Connection conn = DriverManager.getConnection(URL, USER, PASSWORD)){
+        try(Connection conn = DriverManager.getConnection(URL)){
             try (PreparedStatement stmt = conn.prepareStatement(sql)){
                 try (ResultSet rs = stmt.executeQuery()){
                     while(rs.next()){
@@ -129,7 +129,7 @@ public class ApiConfigDao {
     public static ApiConfig getDefaultConfig() throws SQLException {
         String sql = "SELECT * FROM api_config ORDER BY id ASC LIMIT 1;";
         
-        try(Connection conn = DriverManager.getConnection(URL, USER, PASSWORD)){
+        try(Connection conn = DriverManager.getConnection(URL)){
             try (PreparedStatement stmt = conn.prepareStatement(sql)){
                 try (ResultSet rs = stmt.executeQuery()){
                     if(rs.next()){
@@ -154,7 +154,7 @@ public class ApiConfigDao {
         
         String sql = "SELECT COUNT(*) FROM api_config;";
         
-        try(Connection conn = DriverManager.getConnection(URL, USER, PASSWORD)){
+        try(Connection conn = DriverManager.getConnection(URL)){
             try (PreparedStatement stmt = conn.prepareStatement(sql)){
                 try (ResultSet rs = stmt.executeQuery()){
                     if(rs.next()){

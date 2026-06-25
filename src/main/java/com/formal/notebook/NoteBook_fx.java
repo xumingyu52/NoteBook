@@ -39,6 +39,16 @@ public class NoteBook_fx extends Application{
     private Stage primaryStage;
     private Scene guide_scene;
 
+    // SQLite 表初始化
+    static {
+        try {
+            DB_Opearte.initTables();
+        } catch (SQLException e) {
+            System.err.println("❌ 数据库表初始化失败！");
+            e.printStackTrace();
+        }
+    }
+
     @Override
     public void start(Stage primaryStage) throws Exception {
         this.primaryStage = primaryStage;
