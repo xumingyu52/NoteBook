@@ -290,16 +290,19 @@ public class NoteBook_fx extends Application{
         editor_panel.getChildren().add(editor);
         
         // AI 按钮（编辑器右下角浮动）
-        Button ai_button = new Button("🤖");
+        Button ai_button = new Button();
         ai_button.setTooltip(new javafx.scene.control.Tooltip("AI 助手"));
-        ai_button.setStyle("-fx-background-color: #333; -fx-text-fill: white; -fx-background-radius: 50%; -fx-font-size: 20; -fx-cursor: hand;");
+        ai_button.setStyle("-fx-background-color: #333; -fx-background-radius: 50%; -fx-cursor: hand; -fx-padding: 0;");
         ai_button.setPrefSize(48, 48);
         ai_button.setLayoutX(450);
         ai_button.setLayoutY(500);
         ai_button.setMouseTransparent(false);
+        setIcon(ai_button, "/icons/魔方_cube-four.png", 28);
         
-        // AI 聊天面板（第三栏）
+        // AI 聊天面板（第三栏），初始隐藏
         AiChatPanel aiChatPanel = new AiChatPanel();
+        aiChatPanel.setVisible(false);
+        aiChatPanel.setManaged(false);
         aiChatPanel.setOnContentGenerated(() -> {
             String aiResponse = aiChatPanel.getAiResponse();
             if (aiResponse != null && !aiResponse.isEmpty()) {
@@ -307,7 +310,7 @@ public class NoteBook_fx extends Application{
                 editor.setMarkdown(currentContent + "\n\n" + aiResponse);
             }
         });
-        
+
         // AI 按钮事件
         ai_button.setOnAction(event -> {
             try {
@@ -319,7 +322,10 @@ public class NoteBook_fx extends Application{
                         AiService service = new AiService(config);
                         aiChatPanel.setService(service);
                         aiChatPanel.setContext(editor.getMarkdown());
+                        aiChatPanel.setVisible(true);
+                        aiChatPanel.setManaged(true);
                         aiChatPanel.show();
+                        main_splitpane.setDividerPositions(0.25, 0.65);
                     }
                 }
             } catch (SQLException e) {

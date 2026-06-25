@@ -13,6 +13,30 @@ public class AiService {
     public AiService(ApiConfig config) {
         this.config = config;
     }
+
+    private String escapeJson(String s) {
+        if (s == null) return "";
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+            switch (c) {
+                case '"': sb.append("\\\""); break;
+                case '\\': sb.append("\\\\"); break;
+                case '\b': sb.append("\\b"); break;
+                case '\f': sb.append("\\f"); break;
+                case '\n': sb.append("\\n"); break;
+                case '\r': sb.append("\\r"); break;
+                case '\t': sb.append("\\t"); break;
+                default:
+                    if (c < 0x20) {
+                        sb.append(String.format("\\u%04x", (int) c));
+                    } else {
+                        sb.append(c);
+                    }
+            }
+        }
+        return sb.toString();
+    }
     
     public String chat(String prompt, String context) throws Exception {
         String urlStr = config.getBaseUrl();
@@ -29,13 +53,12 @@ public class AiService {
         conn.setDoOutput(true);
         
         String systemPrompt = "你是一个专业的笔记助手。请根据用户提供的笔记内容和指令，帮助用户撰写、修改或完善笔记。回复格式为纯文本，不要包含Markdown代码块标记。";
-        
+        String userContent = "笔记内容：\n" + (context == null ? "" : context) + "\n\n指令：\n" + prompt;
         String jsonPayload = String.format(
-            "{\"model\":\"%s\",\"messages\":[{\"role\":\"system\",\"content\":\"%s\"},{\"role\":\"user\",\"content\":\"笔记内容：\\n%s\\n\\n指令：\\n%s\"}]}",
-            config.getModelId(),
-            systemPrompt,
-            context,
-            prompt
+            "{\"model\":\"%s\",\"messages\":[{\"role\":\"system\",\"content\":\"%s\"},{\"role\":\"user\",\"content\":\"%s\"}]}",
+            escapeJson(config.getModelId()),
+            escapeJson(systemPrompt),
+            escapeJson(userContent)
         );
         
         try (DataOutputStream wr = new DataOutputStream(conn.getOutputStream())) {
