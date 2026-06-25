@@ -8,6 +8,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 
 public class DB_Opearte
@@ -427,5 +428,124 @@ public class DB_Opearte
             throw e;
         }
     }
-}
 
+    /**
+     * 通用搜索方法（返回Title_and_Content）
+     * @param sql SQL查询语句
+     * @param params 参数列表（会自动添加%前缀和后缀）
+     * @return 匹配的笔记列表
+     */
+    private static ArrayList<Title_and_Content> search(String sql, String... params) throws SQLException {
+        ArrayList<Title_and_Content> results = new ArrayList<>();
+        try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            for (int i = 0; i < params.length; i++) {
+                stmt.setString(i + 1, "%" + params[i] + "%");
+            }
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    results.add(new Title_and_Content(
+                        rs.getInt("notebook_id"),
+                        rs.getString("title"),
+                        rs.getString("content")
+                    ));
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("❌ 搜索失败！");
+            e.printStackTrace();
+            throw e;
+        }
+        return results;
+    }
+
+    /**
+     * 通用增强搜索方法（返回SearchResult，包含上下文和相关性评分）
+     * @param sql SQL查询语句
+     * @param keyword 搜索关键词（用于计算相关性和高亮）
+     * @param params 参数列表（会自动添加%前缀和后缀）
+     * @return 匹配的笔记列表
+     */
+    private static ArrayList<SearchResult> enhancedSearch(String sql, String keyword, String... params) throws SQLException {
+        ArrayList<SearchResult> results = new ArrayList<>();
+        try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            for (int i = 0; i < params.length; i++) {
+                stmt.setString(i + 1, "%" + params[i] + "%");
+            }
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    int notebookId = rs.getInt("notebook_id");
+                    String title = rs.getString("title");
+                    String content = rs.getString("content");
+                    
+                    int relevanceScore = com.formal.notebook.SearchUtils.calculateRelevanceScore(title, content, keyword);
+                    List<String> fragments = com.formal.notebook.SearchUtils.extractContextFragments(content, keyword);
+                    String contextFragment = fragments.isEmpty() ? "" : fragments.get(0);
+                    String highlightFragment = com.formal.notebook.SearchUtils.highlightKeyword(contextFragment, keyword);
+                    
+                    results.add(new SearchResult(notebookId, title, content, contextFragment, relevanceScore, highlightFragment));
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("❌ 增强搜索失败！");
+            e.printStackTrace();
+            throw e;
+        }
+        return results;
+    }
+
+    /**
+     * 搜索笔记（按标题搜索）
+     * @param keyword 搜索关键词
+     * @return 匹配的笔记列表
+     */
+    public static ArrayList<Title_and_Content> searchByTitle(String keyword) throws SQLException {
+        return search("SELECT notebook_id, title, content FROM Title_and_Content WHERE title LIKE ?;", keyword);
+    }
+
+    /**
+     * 增强搜索笔记（按标题搜索，返回包含上下文和相关性评分的结果）
+     * @param keyword 搜索关键词
+     * @return 匹配的笔记列表
+     */
+    public static ArrayList<SearchResult> enhancedSearchByTitle(String keyword) throws SQLException {
+        return enhancedSearch("SELECT notebook_id, title, content FROM Title_and_Content WHERE title LIKE ?;", keyword, keyword);
+    }
+
+    /**
+     * 搜索笔记（按内容搜索）
+     * @param keyword 搜索关键词
+     * @return 匹配的笔记列表
+     */
+    public static ArrayList<Title_and_Content> searchByContent(String keyword) throws SQLException {
+        return search("SELECT notebook_id, title, content FROM Title_and_Content WHERE content LIKE ?;", keyword);
+    }
+
+    /**
+     * 增强搜索笔记（按内容搜索，返回包含上下文和相关性评分的结果）
+     * @param keyword 搜索关键词
+     * @return 匹配的笔记列表
+     */
+    public static ArrayList<SearchResult> enhancedSearchByContent(String keyword) throws SQLException {
+        return enhancedSearch("SELECT notebook_id, title, content FROM Title_and_Content WHERE content LIKE ?;", keyword, keyword);
+    }
+
+    /**
+     * 搜索笔记（同时按标题和内容搜索）
+     * @param keyword 搜索关键词
+     * @return 匹配的笔记列表
+     */
+    public static ArrayList<Title_and_Content> searchByTitleAndContent(String keyword) throws SQLException {
+        return search("SELECT notebook_id, title, content FROM Title_and_Content WHERE title LIKE ? OR content LIKE ?;", keyword, keyword);
+    }
+
+    /**
+     * 增强搜索笔记（同时按标题和内容搜索，返回包含上下文和相关性评分的结果）
+     * @param keyword 搜索关键词
+     * @return 匹配的笔记列表
+     */
+    public static ArrayList<SearchResult> enhancedSearchByTitleAndContent(String keyword) throws SQLException {
+        return enhancedSearch("SELECT notebook_id, title, content FROM Title_and_Content WHERE title LIKE ? OR content LIKE ?;", keyword, keyword, keyword);
+    }
+}
