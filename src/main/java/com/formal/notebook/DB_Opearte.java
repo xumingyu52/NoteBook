@@ -427,4 +427,101 @@ public class DB_Opearte
             throw e;
         }
     }
+
+    /**
+     * 搜索笔记（按标题搜索）
+     * @param keyword 搜索关键词
+     * @return 匹配的笔记列表
+     */
+    public static ArrayList<Title_and_Content> searchByTitle(String keyword) throws SQLException {
+        ArrayList<Title_and_Content> results = new ArrayList<>();
+        String sql = "SELECT notebook_id, title, content FROM Title_and_Content WHERE title LIKE ?;";
+        
+        try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            
+            stmt.setString(1, "%" + keyword + "%");
+            
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    results.add(new Title_and_Content(
+                        rs.getInt("notebook_id"),
+                        rs.getString("title"),
+                        rs.getString("content")
+                    ));
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("❌ 按标题搜索失败！");
+            e.printStackTrace();
+            throw e;
+        }
+        
+        return results;
+    }
+
+    /**
+     * 搜索笔记（按内容搜索）
+     * @param keyword 搜索关键词
+     * @return 匹配的笔记列表
+     */
+    public static ArrayList<Title_and_Content> searchByContent(String keyword) throws SQLException {
+        ArrayList<Title_and_Content> results = new ArrayList<>();
+        String sql = "SELECT notebook_id, title, content FROM Title_and_Content WHERE content LIKE ?;";
+        
+        try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            
+            stmt.setString(1, "%" + keyword + "%");
+            
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    results.add(new Title_and_Content(
+                        rs.getInt("notebook_id"),
+                        rs.getString("title"),
+                        rs.getString("content")
+                    ));
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("❌ 按内容搜索失败！");
+            e.printStackTrace();
+            throw e;
+        }
+        
+        return results;
+    }
+
+    /**
+     * 搜索笔记（同时按标题和内容搜索）
+     * @param keyword 搜索关键词
+     * @return 匹配的笔记列表
+     */
+    public static ArrayList<Title_and_Content> searchByTitleAndContent(String keyword) throws SQLException {
+        ArrayList<Title_and_Content> results = new ArrayList<>();
+        String sql = "SELECT notebook_id, title, content FROM Title_and_Content WHERE title LIKE ? OR content LIKE ?;";
+        
+        try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            
+            stmt.setString(1, "%" + keyword + "%");
+            stmt.setString(2, "%" + keyword + "%");
+            
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    results.add(new Title_and_Content(
+                        rs.getInt("notebook_id"),
+                        rs.getString("title"),
+                        rs.getString("content")
+                    ));
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("❌ 按标题和内容搜索失败！");
+            e.printStackTrace();
+            throw e;
+        }
+        
+        return results;
+    }
 }

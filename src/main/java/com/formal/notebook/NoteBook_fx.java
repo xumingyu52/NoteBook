@@ -18,9 +18,11 @@ import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.MenuButton;
 import javafx.scene.control.MenuItem;
+import javafx.scene.control.RadioButton;
 import javafx.scene.control.SplitPane;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TextInputDialog;
+import javafx.scene.control.ToggleGroup;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.GridPane;
@@ -212,10 +214,17 @@ public class NoteBook_fx extends Application{
         setIcon(new_note_button, "/icons/文件添加_file-addition.png", 20);
         new_note_button.setStyle(getToolbarButtonStyle());
 
+        // 搜索按钮（工具栏右侧，新建笔记按钮旁边）
+        Button search_button = new Button();
+        search_button.setTooltip(new javafx.scene.control.Tooltip("搜索笔记"));
+        setIcon(search_button, "/icons/搜索_search.png", 20);
+        search_button.setStyle(getToolbarButtonStyle());
+
         left_toolbar.getChildren().addAll(
             //new_notebook_button_main,
             //toolbar_spacer,
-            new_note_button
+            new_note_button,
+            search_button
         );
 
         // 笔记本选择下拉菜单
@@ -356,6 +365,70 @@ public class NoteBook_fx extends Application{
 
         // 🌟 5. 稍微宽裕一点的舞台尺寸，让布局展开
         Scene new_note_scene = new Scene(new_note_scene_root, 420, 160);
+
+        //-----------------------------------------------------------------//
+        //第六界面：搜索窗口
+        //搜索窗口包含：搜索框、搜索选项（按标题/按内容/按标题和内容）、搜索结果列表
+        VBox search_scene_root = new VBox();
+        search_scene_root.setPadding(new Insets(16));
+        search_scene_root.setSpacing(12);
+        search_scene_root.setStyle("-fx-background-color: #ffffff;");
+
+        // 搜索框区域
+        HBox search_box_hbox = new HBox();
+        search_box_hbox.setSpacing(8);
+        
+        TextField search_input = new TextField();
+        search_input.setPromptText("请输入搜索关键词...");
+        search_input.setPrefHeight(36);
+        search_input.setStyle("-fx-font-size: 14px; -fx-background-radius: 6px; -fx-border-radius: 6px; -fx-border-color: #e9ecef;");
+        HBox.setHgrow(search_input, Priority.ALWAYS);
+        
+        Button search_execute_button = new Button("搜索");
+        search_execute_button.setStyle("-fx-background-color: #409eff; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 6px; -fx-border-radius: 6px;");
+        
+        search_box_hbox.getChildren().addAll(search_input, search_execute_button);
+
+        // 搜索选项区域（放在搜索框下面）
+        HBox search_options_hbox = new HBox();
+        search_options_hbox.setSpacing(16);
+        search_options_hbox.setAlignment(Pos.CENTER_LEFT);
+        
+        ToggleGroup search_toggle_group = new ToggleGroup();
+        
+        RadioButton title_radio = new RadioButton("按标题搜索");
+        title_radio.setToggleGroup(search_toggle_group);
+        title_radio.setStyle("-fx-font-size: 12px;");
+        
+        RadioButton content_radio = new RadioButton("按内容搜索");
+        content_radio.setToggleGroup(search_toggle_group);
+        content_radio.setStyle("-fx-font-size: 12px;");
+        
+        RadioButton both_radio = new RadioButton("按标题和内容搜索");
+        both_radio.setToggleGroup(search_toggle_group);
+        both_radio.setSelected(true);
+        both_radio.setStyle("-fx-font-size: 12px;");
+        
+        search_options_hbox.getChildren().addAll(title_radio, content_radio, both_radio);
+
+        // 搜索结果列表
+        ListView<String> search_result_list = new ListView<>();
+        Label search_empty_label = new Label("搜索结果为空");
+        search_empty_label.setStyle("-fx-text-fill: #adb5bd; -fx-font-style: italic;");
+        search_result_list.setPlaceholder(search_empty_label);
+        search_result_list.setStyle("-fx-background-color: #f8f9fa; -fx-border-color: #e9ecef; -fx-border-radius: 6px;");
+        VBox.setVgrow(search_result_list, Priority.ALWAYS);
+
+        search_scene_root.getChildren().addAll(search_box_hbox, search_options_hbox, search_result_list);
+        
+        Scene search_scene = new Scene(search_scene_root, 500, 400);
+        
+        Stage search_stage = new Stage();
+        search_stage.setTitle("搜索笔记");
+        search_stage.setScene(search_scene);
+        search_stage.setResizable(false);
+        search_stage.initOwner(primaryStage);
+        search_stage.initModality(Modality.WINDOW_MODAL);
 
         //-------------------------------------------------------------------//
         //stage配置区
@@ -696,6 +769,105 @@ public class NoteBook_fx extends Application{
                 primaryStage.setScene(main_scene);
                 new_note_stage.close();
             }catch(SQLException e){
+                error_stackTrace.setText(e.getMessage());
+                error_stage.show();
+                e.printStackTrace();
+            }
+        });
+
+        //--------------------------------------------------------------//
+        //搜索功能事件处理
+        //--------------------------------------------------------------//
+        
+        // 存储搜索结果，用于点击跳转
+        final ArrayList<Title_and_Content> search_results_data = new ArrayList<>();
+
+        // 搜索按钮点击事件
+        search_button.setOnAction(event -> {
+            search_stage.show();
+        });
+
+        // 执行搜索
+        search_execute_button.setOnAction(event -> {
+            String keyword = search_input.getText().trim();
+            if (keyword.isEmpty()) {
+                search_result_list.getItems().clear();
+                return;
+            }
+
+            search_results_data.clear();
+            
+            try {
+                ArrayList<Title_and_Content> results;
+                
+                if (title_radio.isSelected()) {
+                    results = DB_Opearte.searchByTitle(keyword);
+                } else if (content_radio.isSelected()) {
+                    results = DB_Opearte.searchByContent(keyword);
+                } else {
+                    results = DB_Opearte.searchByTitleAndContent(keyword);
+                }
+                
+                search_results_data.addAll(results);
+                
+                ArrayList<String> displayResults = new ArrayList<>();
+                for (Title_and_Content item : results) {
+                    String notebookName = DB_Opearte.get_notebook_name(item.getNotebook_id());
+                    displayResults.add("📒 " + notebookName + " / " + item.getTitle());
+                }
+                
+                search_result_list.setItems(FXCollections.observableArrayList(displayResults));
+                
+            } catch (SQLException e) {
+                error_stackTrace.setText(e.getMessage());
+                error_stage.show();
+                e.printStackTrace();
+            }
+        });
+
+        // 搜索框回车事件
+        search_input.setOnKeyPressed(event -> {
+            if (event.getCode() == javafx.scene.input.KeyCode.ENTER) {
+                search_execute_button.fire();
+            }
+        });
+
+        // 搜索结果点击事件：跳转并打开笔记
+        search_result_list.setOnMouseClicked(event -> {
+            int selectedIndex = search_result_list.getSelectionModel().getSelectedIndex();
+            if (selectedIndex < 0 || selectedIndex >= search_results_data.size()) return;
+
+            Title_and_Content selectedNote = search_results_data.get(selectedIndex);
+            int notebookId = selectedNote.getNotebook_id();
+            String title = selectedNote.getTitle();
+
+            try {
+                // 先保存当前编辑的内容
+                editor.saveNow();
+
+                // 切换到对应的笔记本
+                last_notebook_id = notebookId;
+                String notebookName = DB_Opearte.get_notebook_name(notebookId);
+                set_select_notebook_button_text(notebookName, select_notebook_button);
+                
+                // 刷新笔记列表
+                refresh_title_list(notebookId, note_list_view);
+                
+                // 选中并打开搜索到的笔记
+                note_list_view.getSelectionModel().select(title);
+                note_list_view.scrollTo(title);
+                
+                editor.setNoteInfo(notebookId, title);
+                editor.setMarkdown(selectedNote.getContent());
+                currentEditingTitle[0] = title;
+
+                // 关闭搜索窗口
+                search_stage.close();
+                
+                // 确保显示主界面
+                primaryStage.setScene(main_scene);
+                
+            } catch (SQLException e) {
                 error_stackTrace.setText(e.getMessage());
                 error_stage.show();
                 e.printStackTrace();
