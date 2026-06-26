@@ -1,7 +1,5 @@
 package com.formal.notebook;
 
-import java.io.FileInputStream;
-import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -9,7 +7,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Properties;
 
 public class DB_Opearte
 {
@@ -17,17 +14,13 @@ public class DB_Opearte
     private static String URL;
 
     static {
-        Properties props = new Properties();
-        try{
-            props.load(new FileInputStream("db.properties"));
-            URL = props.getProperty("db.url");
-            // 加载 SQLite 驱动
-            Class.forName("org.sqlite.JDBC");
-        }catch(IOException e){
-            System.err.println("❌ 配置文件加载失败，请检查 db.properties 文件是否存在！");
-            e.printStackTrace();
-        } catch (ClassNotFoundException e) {
-            System.err.println("❌ SQLite 驱动加载失败！");
+        try {
+            URL = DatabaseConfig.getUrl();
+            if (URL == null || URL.isBlank()) {
+                throw new IllegalStateException("数据库 URL 未配置，请检查 db.properties");
+            }
+        } catch (Exception e) {
+            System.err.println("❌ 数据库配置加载失败，请检查 db.properties 文件是否存在！");
             e.printStackTrace();
         }
     }

@@ -76,6 +76,11 @@
             <version>3.45.2.0</version>
         </dependency>
         <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>2.0.9</version>
+        </dependency>
+        <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
             <version>${junit.version}</version>
@@ -103,8 +108,7 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.13.0</version>
                 <configuration>
-                    <source>21</source>
-                    <target>21</target>
+                    <release>21</release>
                 </configuration>
             </plugin>
             <plugin>
@@ -122,6 +126,21 @@
                     <compress>2</compress>
                     <noVerify>false</noVerify>
                     <bindServices>true</bindServices>
+                    <jpackageImageName>NoteBook</jpackageImageName>
+                    <jpackageOptions>
+                        <jpackageOption>--type</jpackageOption>
+                        <jpackageOption>dmg</jpackageOption>
+                        <jpackageOption>--vendor</jpackageOption>
+                        <jpackageOption>Formal</jpackageOption>
+                        <jpackageOption>--app-version</jpackageOption>
+                        <jpackageOption>1.0</jpackageOption>
+                        <jpackageOption>--mac-package-identifier</jpackageOption>
+                        <jpackageOption>com.formal.notebook</jpackageOption>
+                        <jpackageOption>--icon</jpackageOption>
+                        <jpackageOption>src/main/resources/icons/NoteBook.icns</jpackageOption>
+                        <jpackageOption>--mac-app-category</jpackageOption>
+                        <jpackageOption>public.app-category.productivity</jpackageOption>
+                    </jpackageOptions>
                 </configuration>
                 <executions>
                     <execution>

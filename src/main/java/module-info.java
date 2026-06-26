@@ -8,6 +8,7 @@ module com.formal.notebook {
     requires org.kordamp.bootstrapfx.core;
     requires com.almasb.fxgl.all;
     requires java.sql;
+    requires org.xerial.sqlitejdbc;
     requires javafx.graphics;
     requires java.desktop;
     requires javafx.base;

@@ -1,8 +1,12 @@
 package com.formal.notebook;
 
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Properties;
@@ -623,17 +627,25 @@ public class NoteBook_fx extends Application{
             if(notebook_list.isEmpty()){
                 primaryStage.show();
             }else{
-                //从config中读取上次使用的笔记本ID
+                // 从 app data 目录读取上次使用的笔记本ID
                 Properties properties = new Properties();
-                try(FileInputStream config_load = new FileInputStream("Config.properties")){
-                    properties.load(config_load);
-                }catch(Exception e){
-                    e.printStackTrace();
-                    error_stackTrace.setText(e.getMessage());
-                    error_stage.show();
+                Path configPath = Paths.get(DatabaseConfig.getConfigFilePath());
+                if (Files.exists(configPath)) {
+                    try (InputStream configLoad = Files.newInputStream(configPath)) {
+                        properties.load(configLoad);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        error_stackTrace.setText(e.getMessage());
+                        error_stage.show();
+                    }
                 }
-                this.last_notebook_id = Integer.parseInt(properties.getProperty("last_notebook_id"));
-                //根据上次使用的笔记本ID刷新标题列表
+                String lastId = properties.getProperty("last_notebook_id");
+                if (lastId != null && !lastId.isBlank()) {
+                    this.last_notebook_id = Integer.parseInt(lastId);
+                } else if (!notebook_list.isEmpty()) {
+                    this.last_notebook_id = notebook_list.get(0).getId();
+                }
+                // 根据上次使用的笔记本ID刷新标题列表
                 refresh_title_list(last_notebook_id, note_list_view);
                 String notebook_name = DB_Opearte.get_notebook_name(last_notebook_id);
                 set_select_notebook_button_text(notebook_name, select_notebook_button);
@@ -766,26 +778,24 @@ public class NoteBook_fx extends Application{
         }
 
         primaryStage.setOnCloseRequest(event -> {
-            //保存上一次使用的笔记本ID
+            // 保存上一次使用的笔记本ID
             try {
-                FileInputStream config_load = new FileInputStream("Config.properties");
+                Path configPath = Paths.get(DatabaseConfig.getConfigFilePath());
+                Files.createDirectories(configPath.getParent());
                 if (last_notebook_id != -1) {
-                    // 保存上一次使用的笔记本ID
                     Properties properties = new Properties();
                     properties.setProperty("last_notebook_id", String.valueOf(last_notebook_id));
-                    try(FileOutputStream config_save = new FileOutputStream("Config.properties")){
-                        properties.store(config_save, "Last Notebook ID");
-                    }catch(Exception e){
-                        e.printStackTrace();
+                    try (OutputStream configSave = Files.newOutputStream(configPath,
+                            StandardOpenOption.CREATE,
+                            StandardOpenOption.TRUNCATE_EXISTING)) {
+                        properties.store(configSave, "Last Notebook ID");
                     }
                 }
-                config_load.close();
-            } catch (Exception e) {
+            } catch (IOException e) {
                 e.printStackTrace();
                 error_stackTrace.setText(e.getMessage());
                 error_stage.show();
-            }
-            finally{
+            } finally {
                 // 保存当前编辑的笔记
                 if (editor != null) {
                     editor.shutdown();
@@ -794,7 +804,6 @@ public class NoteBook_fx extends Application{
                 javafx.application.Platform.exit();
                 System.exit(0);
             }
-            
         });
         //--------------------------------------------------------------//
         //新建笔记的判断逻辑

@@ -12,15 +12,13 @@ public class ApiConfigDao {
     private static String URL;
     
     static {
-        java.util.Properties props = new java.util.Properties();
-        try{
-            props.load(new java.io.FileInputStream("db.properties"));
-            URL = props.getProperty("db.url");
-            // 加载 SQLite 驱动
-            Class.forName("org.sqlite.JDBC");
-        }catch(java.io.IOException e){
-            e.printStackTrace();
-        } catch (ClassNotFoundException e) {
+        try {
+            URL = DatabaseConfig.getUrl();
+            if (URL == null || URL.isBlank()) {
+                throw new IllegalStateException("数据库 URL 未配置，请检查 db.properties");
+            }
+        } catch (Exception e) {
+            System.err.println("❌ 数据库配置加载失败，请检查 db.properties 文件是否存在！");
             e.printStackTrace();
         }
     }
